@@ -13,10 +13,19 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
-// ROHE IP ADRESSE
-const BACKEND_URL = "https://116.203.126.146:4000";
-
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
+
+// Hilfsfunktion: Ruft über unsere Relay-Brücke die Hetzner-IP auf
+const callBackend = async (endpoint: string, method: string = "GET", payload?: any) => {
+  const res = await fetch("/api/relay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint, method, payload })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Fehler vom Server");
+  return data;
+};
 
 function PlayPageContent() {
   const { connected, publicKey } = useWallet();
@@ -32,21 +41,15 @@ function PlayPageContent() {
   const [displayProgress, setDisplayProgress] = useState(0);
   const isReady = prefetchData.status.base === 'done' && prefetchData.status.voxelibre === 'done';
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  // 1. EXISTIERENDEN SPIELER CHECKEN
+  // 1. SPIELER CHECKEN
   useEffect(() => {
     if (connected && publicKey) {
       executePrefetch('mineclone2');
       setPlayState("checking");
 
-      fetch(`${BACKEND_URL}/api/auth/${publicKey.toBase58()}`)
-        .then(res => {
-          if (!res.ok) throw new Error("HTTP Fehler: " + res.status);
-          return res.json();
-        })
+      callBackend(`/api/auth/${publicKey.toBase58()}`)
         .then(data => {
           if (data.exists && data.player) {
             setPlayerName(data.player.player_name);
@@ -57,7 +60,7 @@ function PlayPageContent() {
           }
         })
         .catch(err => {
-          console.error("Fehler bei Auth-Prüfung:", err);
+          console.error("Auth Error:", err);
           setPlayState("setup");
         });
     } else {
@@ -71,43 +74,32 @@ function PlayPageContent() {
     setDisplayProgress((baseStatus + voxelStatus) / 2 * 100);
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER ERSTELLEN
+  // 2. SPIELER ERSTELLEN
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
       if (!publicKey) return;
 
-      const res = await fetch(`${BACKEND_URL}/api/player/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          player_name: name,
-          phantom_wallet: publicKey.toBase58(),
-          game_mode: mode.toUpperCase()
-        })
+      const data = await callBackend(`/api/player/create`, "POST", {
+        player_name: name,
+        phantom_wallet: publicKey.toBase58(),
+        game_mode: mode.toUpperCase()
       });
-
-      if (!res.ok) throw new Error("HTTP Fehler: " + res.status);
-      const data = await res.json();
 
       if (data.success) {
         setPlayerName(name);
         setBackendWallet(data.backend_wallet);
         setPlayState("dashboard");
       } else {
-        alert("Server verweigert Erstellung: " + data.error);
+        alert("Fehler vom Server: " + data.error);
       }
-    } catch (err) {
-      console.error("Spielererstellung fehlgeschlagen:", err);
-      alert("Konnte Backend nicht erreichen! Server offline oder Firewall blockiert.");
+    } catch (err: any) {
+      console.error("Erstellung fehlgeschlagen:", err);
+      alert(err.message || "Verbindung zum Hetzner Server fehlgeschlagen!");
     }
   };
 
   const handleJoin = async () => {
-    try {
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (e) { }
+    try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) { }
 
     if (isReady && publicKey) {
       const options: GameOptionsLocal = {
@@ -132,15 +124,7 @@ function PlayPageContent() {
   };
 
   if (playState === "playing" && gameOptions) {
-    return (
-      <RuntimeScreen
-        gameOptions={gameOptions}
-        onGameStatus={(status) => {
-          if (status === 'failed') setPlayState("dashboard");
-        }}
-        zipLoaderPromise={null}
-      />
-    );
+    return <RuntimeScreen gameOptions={gameOptions} onGameStatus={(s) => { if (s === 'failed') setPlayState("dashboard"); }} zipLoaderPromise={null} />;
   }
 
   return (
@@ -149,26 +133,16 @@ function PlayPageContent() {
         <div className="bg-white/80 backdrop-blur-xl border border-border p-12 rounded-3xl shadow-xl flex flex-col items-center text-center max-w-md w-full">
           <Wallet className="w-16 h-16 text-primary mb-6" />
           <h2 className="text-3xl font-heading font-bold mb-4">Connect Wallet</h2>
-          <p className="text-muted-foreground mb-8">
-            Connect your Phantom wallet to authenticate and enter Solcraft.
-          </p>
-          <div className="wallet-button-wrapper">
-            {mounted && <WalletMultiButton />}
-          </div>
+          <div className="wallet-button-wrapper">{mounted && <WalletMultiButton />}</div>
         </div>
       )}
-
       {playState === "checking" && (
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-lg font-bold">Synchronizing with Server...</p>
         </div>
       )}
-
-      {playState === "setup" && (
-        <CharacterSetupModal onMint={handleMint} />
-      )}
-
+      {playState === "setup" && <CharacterSetupModal onMint={handleMint} />}
       {playState === "dashboard" && publicKey && (
         <PlayerDashboardModal
           playerName={playerName}

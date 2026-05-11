@@ -5,9 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import QRCode from "react-qr-code";
 
-// ROHE IP ADRESSE
-const BACKEND_URL = "https://116.203.126.146:4000";
-
 interface PlayerDashboardModalProps {
   playerName: string;
   phantomWallet: string;
@@ -16,6 +13,16 @@ interface PlayerDashboardModalProps {
   displayProgress: number;
   onJoin: () => void;
 }
+
+// Gleicher Relay Call wie in page.tsx
+const callBackend = async (endpoint: string, method: string = "GET", payload?: any) => {
+  const res = await fetch("/api/relay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint, method, payload })
+  });
+  return await res.json();
+};
 
 export function PlayerDashboardModal({
   playerName,
@@ -32,31 +39,23 @@ export function PlayerDashboardModal({
   const [skinIndex, setSkinIndex] = useState(0);
   const [inventory, setInventory] = useState<any[]>([]);
 
-  const shortAddress = backendWallet
-    ? `${backendWallet.substring(0, 4)}...${backendWallet.substring(backendWallet.length - 4)}`
-    : "Loading...";
+  const shortAddress = backendWallet ? `${backendWallet.substring(0, 4)}...${backendWallet.substring(backendWallet.length - 4)}` : "Loading...";
 
   const fetchData = async () => {
     setIsReloading(true);
     try {
-      const nftRes = await fetch(`${BACKEND_URL}/api/nfts/${phantomWallet}`);
-      if (nftRes.ok) {
-        const nftData = await nftRes.json();
-        if (nftData.success && nftData.nfts) setNfts(nftData.nfts);
-      }
+      const nftData = await callBackend(`/api/nfts/${phantomWallet}`);
+      if (nftData.success && nftData.nfts) setNfts(nftData.nfts);
 
-      const invRes = await fetch(`${BACKEND_URL}/api/inventory/${phantomWallet}`);
-      if (invRes.ok) {
-        const invData = await invRes.json();
-        if (invData.success && invData.data.web3_inventory) {
-          const invArray = Object.entries(invData.data.web3_inventory)
-            .map(([key, val]) => ({ name: key, amount: val }))
-            .filter(item => (item.amount as number) > 0);
-          setInventory(invArray);
-        }
+      const invData = await callBackend(`/api/inventory/${phantomWallet}`);
+      if (invData.success && invData.data?.web3_inventory) {
+        const invArray = Object.entries(invData.data.web3_inventory)
+          .map(([key, val]) => ({ name: key, amount: val }))
+          .filter(item => (item.amount as number) > 0);
+        setInventory(invArray);
       }
     } catch (err) {
-      console.error("Fehler beim Laden der Backend-Daten:", err);
+      console.error("Laden fehlgeschlagen:", err);
     }
     setIsReloading(false);
   };
@@ -71,23 +70,15 @@ export function PlayerDashboardModal({
 
   useEffect(() => {
     if (nfts.length > 0 && phantomWallet) {
-      fetch(`${BACKEND_URL}/api/player/skin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phantom_wallet: phantomWallet,
-          skin_id: nfts[skinIndex].id
-        })
+      callBackend(`/api/player/skin`, "POST", {
+        phantom_wallet: phantomWallet,
+        skin_id: nfts[skinIndex].id
       }).catch(err => console.error("Konnte Skin nicht speichern:", err));
     }
   }, [skinIndex, nfts, phantomWallet]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="bg-white/90 backdrop-blur-2xl border border-border p-6 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col md:flex-row gap-6 min-h-[500px]"
-    >
+    <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} className="bg-white/90 backdrop-blur-2xl border border-border p-6 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col md:flex-row gap-6 min-h-[500px]">
       <div className="flex-1 flex flex-col">
         <div className="flex items-center gap-4 mb-6 border-b border-border pb-2">
           <button onClick={() => setActiveTab("Character")} className={`text-lg font-heading font-bold transition-colors ${activeTab === "Character" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>Character</button>
@@ -101,7 +92,7 @@ export function PlayerDashboardModal({
                 <div className="relative flex items-center justify-center mb-6">
                   <button onClick={handlePrevSkin} className="absolute left-0 -ml-12 p-2 bg-secondary rounded-full hover:bg-border transition-colors"><ChevronLeft className="w-6 h-6" /></button>
                   <div className="w-48 h-48 bg-secondary/50 rounded-2xl border border-border p-4 flex items-center justify-center overflow-hidden shadow-inner">
-                    <img src={nfts[skinIndex]?.image || ""} alt="Player Skin" className="w-full h-full object-contain drop-shadow-lg" onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${playerName}&backgroundColor=transparent`; }} />
+                    <img src={nfts[skinIndex]?.image || ""} alt="Skin" className="w-full h-full object-contain drop-shadow-lg" onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${playerName}&backgroundColor=transparent`; }} />
                   </div>
                   <button onClick={handleNextSkin} className="absolute right-0 -mr-12 p-2 bg-secondary rounded-full hover:bg-border transition-colors"><ChevronRight className="w-6 h-6" /></button>
                 </div>
@@ -119,9 +110,7 @@ export function PlayerDashboardModal({
                   inventory.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-4 bg-secondary/30 border border-border rounded-xl">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-lg p-2 shadow-sm border border-border">
-                          <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} alt={item.name} className="w-full h-full object-contain" />
-                        </div>
+                        <div className="w-12 h-12 bg-white rounded-lg p-2 shadow-sm border border-border"><img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} alt={item.name} className="w-full h-full object-contain" /></div>
                         <span className="font-bold">{item.name}</span>
                       </div>
                       <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">x{item.amount}</div>
@@ -141,9 +130,7 @@ export function PlayerDashboardModal({
           <h3 className="text-lg font-heading font-bold">Custodial Wallet</h3>
           <button onClick={fetchData} className={`p-2 text-muted-foreground hover:text-foreground transition-all ${isReloading ? "rotate-180" : ""}`} style={{ transitionDuration: "0.5s" }}><RefreshCw className="w-5 h-5" /></button>
         </div>
-
         <div className="flex-1 flex flex-col items-center justify-center mb-8">
-          <p className="text-sm text-center text-muted-foreground mb-4">Send SPL tokens to this wallet to load them into the game.</p>
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-border mb-4">
             {backendWallet ? <QRCode value={backendWallet} size={150} level="Q" /> : <div className="w-[150px] h-[150px] animate-pulse bg-secondary rounded-lg" />}
           </div>
