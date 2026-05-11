@@ -67,8 +67,13 @@ html {
 
 /* Cloud drift animation */
 @keyframes cloudDrift {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-200vw); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-200vw);
+  }
 }
 
 /* Wallet adapter button — match the site's primary color */
@@ -82,14 +87,25 @@ html {
   padding: 0.75rem 1.5rem !important;
   transition: opacity 0.2s ease !important;
 }
+
 .wallet-adapter-button:hover {
   opacity: 0.88 !important;
 }
+
 .wallet-adapter-modal-wrapper {
   border-radius: 24px !important;
 }
 
 /* Custom scrollbar for inventory */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #E4E4E7; border-radius: 99px; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E4E4E7;
+  border-radius: 99px;
+}

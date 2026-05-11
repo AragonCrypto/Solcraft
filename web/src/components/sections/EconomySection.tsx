@@ -11,7 +11,7 @@ const points = [
     description:
       "Place vending machines anywhere in the world to trade and exchange items or blocks 24/7 asynchronously. The blockchain handles escrow — no third party, no trust required.",
     image:
-      "https://images.unsplash.com/photo-1639762681485-074b7f4fc8bc?q=80&w=1000&auto=format&fit=crop",
+      "/assets/images/01.png",
   },
   {
     index: "02",
@@ -19,7 +19,7 @@ const points = [
     description:
       "Use ordinary DeFi methods directly from your browser. Every resource in Solcraft is an SPL token. Trade smoothly on Raydium pools with lightning-fast Solana finality.",
     image:
-      "https://images.unsplash.com/photo-1622630998477-20b41cd0e025?q=80&w=1000&auto=format&fit=crop",
+      "/assets/images/02.png",
   },
   {
     index: "03",
@@ -27,7 +27,7 @@ const points = [
     description:
       "Buy resources and NFTs and send them directly to your player wallet. Regular items appear in your inventory instantly, and NFTs can be equipped as fully on-chain 3D character skins.",
     image:
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop",
+      "/assets/images/03.png",
   },
 ];
 

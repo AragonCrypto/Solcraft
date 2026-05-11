@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import QRCode from "react-qr-code";
 
 // ⚠️ DEINE HETZNER SERVER IP HIER EINTRAGEN! (z.B. "http://116.203.126.146:4000")
-const BACKEND_URL = "http://DEINE_HETZNER_IP:4000";
+const BACKEND_URL = "https://api.solcraft.me:4000";
 
 interface PlayerDashboardModalProps {
   playerName: string;

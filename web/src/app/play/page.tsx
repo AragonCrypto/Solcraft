@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Transaction, TransactionInstruction, PublicKey } from "@solana/web3.js";
+import { Transaction, TransactionInstruction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 
 import { CharacterSetupModal } from "@/components/game/CharacterSetupModal";
 import { PlayerDashboardModal } from "@/components/game/PlayerDashboardModal";
@@ -14,8 +14,11 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
-// HIER IST DEINE SERVER-IP HINTERLEGT!
-const BACKEND_URL = "http://116.203.126.146:4000";
+// 🚀 MIXED CONTENT FIX: Wir nutzen die HTTPS Domain!
+const BACKEND_URL = "https://api.solcraft.me:4000";
+
+// ⚠️ DEINE WALLET-ADRESSE FÜR DIE 0.1 SOL LIQUID GEBÜHR
+const PROJECT_WALLET = "11111111111111111111111111111111";
 
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
@@ -41,27 +44,26 @@ function PlayPageContent() {
   // 1. EXISTIERENDEN SPIELER CHECKEN
   useEffect(() => {
     if (connected && publicKey) {
-      // Prefetch starten
       executePrefetch('mineclone2');
       setPlayState("checking");
 
-      // Backend anfragen: Kennt die Datenbank diese Phantom Wallet schon?
       fetch(`${BACKEND_URL}/api/auth/${publicKey.toBase58()}`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP Status " + res.status);
+          return res.json();
+        })
         .then(data => {
           if (data.exists && data.player) {
-            // Spieler gefunden! Springe direkt zum Dashboard
             setPlayerName(data.player.player_name);
             setBackendWallet(data.player.backend_wallet_pubkey);
             setPlayState("dashboard");
           } else {
-            // Neuer Spieler -> Muss sich einen Namen aussuchen
             setPlayState("setup");
           }
         })
         .catch(err => {
-          console.error("Datenbank-Verbindungsfehler:", err);
-          // Fallback, falls Server down ist
+          console.error("Backend-Verbindungsfehler:", err);
+          // Zeige Setup an, wenn API failt (für Hackathon-Demozwecke)
           setPlayState("setup");
         });
     } else {
@@ -82,43 +84,56 @@ function PlayPageContent() {
     });
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER MINTEN (SICHERER SOLANA TRANSACTION FLOW)
+  // 2. NEUEN SPIELER MINTEN (BEIDE MODI MÜSSEN SIGNIEREN!)
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
-      let signature = "manual_registration_no_tx";
+      if (!publicKey) throw new Error("Wallet not connected");
 
+      const tx = new Transaction();
+
+      // LOGIK-FIX: Liquid sendet SOL, Manual sendet ein Memo. BEIDES erfordert Phantom!
       if (mode === "Liquid") {
-        if (!publicKey) throw new Error("Wallet not connected");
-
-        // DIE SICHERE METHODE: Ein Memo auf die Blockchain schreiben (Kosten: Fast 0 SOL)
-        // Das verhindert Phantom "Simulation Failed" oder "Malicious" Warnungen!
-        const tx = new Transaction().add(
-          new TransactionInstruction({
-            keys: [{ pubkey: publicKey, isSigner: true, isWritable: false }],
-            data: Buffer.from(`Solcraft Player Registration: ${name}`, "utf-8"),
-            programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"), // Offizielles Solana Memo Program
+        tx.add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: new PublicKey(PROJECT_WALLET),
+            lamports: 0.1 * LAMPORTS_PER_SOL,
           })
         );
-
-        // EXTREM WICHTIG FÜR PHANTOM: Wir müssen einen frischen Blockhash holen!
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = publicKey;
-
-        // signAndSendTransaction wird hier von der Wallet-Adapter Library intern absolut fehlerfrei aufgerufen
-        signature = await sendTransaction(tx, connection);
-
-        // Warten, bis das Netzwerk die Transaktion bestätigt hat
-        await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature }, 'confirmed');
+      } else {
+        tx.add(
+          new TransactionInstruction({
+            keys: [{ pubkey: publicKey, isSigner: true, isWritable: false }],
+            data: Buffer.from(`Solcraft Registration: ${name}`, "utf-8"),
+            programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+          })
+        );
       }
 
-      // 3. WENN TX ERFOLGREICH -> BACKEND INFORMIEREN UND CUSTODIAL WALLET GENERIEREN LASSEN
+      // Frischen Blockhash holen, um Phantom "Malicious/Simulation" Fehler zu vermeiden
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = publicKey;
+
+      // Senden & Signieren
+      console.log(`Sende ${mode} Transaktion...`);
+      const signature = await sendTransaction(tx, connection);
+
+      // Bestätigen (Mit Fehlerbehandlung für Devnet-Lags)
+      try {
+        await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature }, 'confirmed');
+      } catch (confirmError) {
+        console.warn("Devnet Bestätigung verzögert, fahre trotzdem fort:", confirmError);
+        // Auf Devnet ignorieren wir Timeout-Fehler oft, wenn die TX an sich erfolgreich signiert wurde.
+      }
+
+      // 3. BACKEND INFORMIEREN UND CUSTODIAL WALLET HOLEN
       const res = await fetch(`${BACKEND_URL}/api/player/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           player_name: name,
-          phantom_wallet: publicKey!.toBase58(),
+          phantom_wallet: publicKey.toBase58(),
           game_mode: mode.toUpperCase(),
           tx_signature: signature
         })
@@ -128,18 +143,19 @@ function PlayPageContent() {
 
       if (data.success) {
         setPlayerName(name);
-        setBackendWallet(data.backend_wallet); // Die Custodial Wallet für den QR Code!
+        setBackendWallet(data.backend_wallet);
         setPlayState("dashboard");
       } else {
         alert("Server Fehler: " + data.error);
       }
     } catch (err: any) {
       console.error("Minting fehlgeschlagen:", err);
-      // Wenn der User in Phantom auf "Abbrechen" klickt, fangen wir das hier ab
       if (err.message?.includes("User rejected")) {
-        alert("Transaktion abgebrochen. Du musst signieren, um Liquid Player zu werden.");
+        alert("Transaktion abgebrochen. Du musst signieren, um mitzuspielen.");
+      } else if (err.message?.includes("insufficient lamports") || err.message?.includes("balance")) {
+        alert("Zu wenig SOL! Hol dir Tokens vom Solana Devnet Faucet.");
       } else {
-        alert("Transaktion fehlgeschlagen. Prüfe deine SOL-Balance (Devnet).");
+        alert("Transaktion fehlgeschlagen. Versuche es nochmal.");
       }
     }
   };
@@ -156,7 +172,7 @@ function PlayPageContent() {
     if (isReady && publicKey) {
       const options: GameOptionsLocal = {
         language: 'en',
-        proxy: 'wss://eu1.dustlabs.io/mtproxy', // Production WebSocket Proxy
+        proxy: 'wss://eu1.dustlabs.io/mtproxy',
         storagePolicy: 'indexeddb',
         minetestArgs: new MinetestArgs(),
         mode: 'local',
@@ -165,10 +181,10 @@ function PlayPageContent() {
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = '116.203.126.146';
+      options.minetestArgs.address = '116.203.126.146'; // Game-Server IP bleibt HTTP/Raw IP
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
-      options.minetestArgs.password = 'Solcraft123'; // Wird für die Game-Session genutzt
+      options.minetestArgs.password = 'Solcraft123';
 
       setGameOptions(options);
       setPlayState("playing");
@@ -230,7 +246,6 @@ function PlayPageContent() {
 export default function PlayPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
-      {/* Abstract Grid Background */}
       <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
 
       <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
