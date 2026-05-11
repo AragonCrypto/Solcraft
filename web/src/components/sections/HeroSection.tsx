@@ -121,7 +121,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 10,
-          bottom: 0, left: "-5%", right: "-5%", height: "62%",
+          bottom: 0, left: "-5%", right: "-5%", height: "100%",
           x: xFar, y: yFarScroll,
         }}
       >
@@ -264,7 +264,7 @@ export function HeroSection() {
       {/* Covers full width at the bottom, fastest cursor movement */}
       <motion.div
         style={{
-          position: "absolute", zIndex: 42,
+          position: "absolute", zIndex: 100,
           bottom: "-6%", left: "-5%", right: "-5%",
           height: "42%",
           x: xFront, y: yFrontScroll,
@@ -314,7 +314,8 @@ export function HeroSection() {
       <div
         style={{
           position: "absolute", zIndex: 60,
-          bottom: 0, left: 0, right: 0, height: "160px",
+          bottom: 0, left: 0, right: 0, height: "50px",
+          background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,0.5) 100%)",
           pointerEvents: "none",
         }}
       />
