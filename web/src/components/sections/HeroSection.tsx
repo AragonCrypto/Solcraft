@@ -228,7 +228,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 36,
-          bottom: "-10%", left: "-4%",
+          bottom: "-20px", left: "-4%",
           width: "45%", height: "64%",
           x: xTerr, y: yTerrScroll,
         }}
@@ -246,7 +246,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 38,
-          bottom: "-10%", right: "-4%",
+          bottom: "-20px", right: "-4%",
           width: "45%", height: "64%",
           x: xTerr, y: yTerrScroll,
           scaleX: -1,
@@ -265,7 +265,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 42,
-          bottom: "-10%", left: "-5%", right: "-5%",
+          bottom: "-6%", left: "-5%", right: "-5%",
           height: "42%",
           x: xFront, y: yFrontScroll,
         }}
