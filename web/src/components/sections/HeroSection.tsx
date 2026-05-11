@@ -314,8 +314,8 @@ export function HeroSection() {
       <div
         style={{
           position: "absolute", zIndex: 101,
-          bottom: 0, left: 0, right: 0, height: "50px",
-          background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,0.5) 100%)",
+          bottom: 0, left: 0, right: 0, height: "20px",
+          background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,1) 100%)",
           pointerEvents: "none",
         }}
       />
