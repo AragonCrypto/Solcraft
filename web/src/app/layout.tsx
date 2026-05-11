@@ -14,6 +14,8 @@ export const metadata: Metadata = {
     "Not another idle clicker. This is a living, breathing world where every block, trade, and death is immutably recorded on Solana.",
 };
 
+import { WalletContextProvider } from "@/components/providers/WalletContextProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,8 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} scroll-smooth`}>
-      <body className="antialiased bg-[#FAFAFA] text-[#09090B] overflow-x-hidden">
-        {children}
+      <body suppressHydrationWarning className="antialiased bg-[#FAFAFA] text-[#09090B] overflow-x-hidden">
+        <WalletContextProvider>
+          {children}
+        </WalletContextProvider>
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { StorageManager } from './storageManager';
-import { GameId } from '../App';
+import { GameId } from './common';
 
 export interface MinetestConsole {
   print: (text: string) => void;
@@ -138,7 +138,7 @@ export const GlobalProvider: React.FC<{
   }), [consolePrint, consolePrintErr, messages]);
     
   const prefetch = useCallback(async (name: PackName) => {
-    const packUrl = `minetest/packs/${name}.pack`;
+    const packUrl = `/minetest/packs/${name}.pack`;
     try {
       console.log(`Prefetching pack: ${packUrl}`);
       const response = await fetch(packUrl);
@@ -166,6 +166,7 @@ export const GlobalProvider: React.FC<{
       
       const chunks: Uint8Array[] = [];
       let receivedLength = 0;
+      let lastReportedProgress = -1;
       
       while (true) {
         const {done, value} = await reader.read();
@@ -177,13 +178,17 @@ export const GlobalProvider: React.FC<{
         chunks.push(value);
         receivedLength += value.length;
         
-        setPrefetchStatus(prev => ({
-          ...prev,
-          status: {
-            ...prev.status,
-            [name]: receivedLength / (totalSize || 1)
-          }
-        }));
+        const currentProgress = Math.floor((receivedLength / (totalSize || 1)) * 100);
+        if (currentProgress > lastReportedProgress + 1) { // Only update every 1%+
+          lastReportedProgress = currentProgress;
+          setPrefetchStatus(prev => ({
+            ...prev,
+            status: {
+              ...prev.status,
+              [name]: receivedLength / (totalSize || 1)
+            }
+          }));
+        }
       }
       
       // Combine all chunks into a single Uint8Array

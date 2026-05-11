@@ -454,7 +454,7 @@ export class StorageManager {
         }
       );
     });
-    const zipBlob = new Blob([zipFile], { type: 'application/zip' });
+    const zipBlob = new Blob([zipFile as any], { type: 'application/zip' });
     const url = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
     a.style.display = 'none';

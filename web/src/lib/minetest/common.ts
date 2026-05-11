@@ -1,4 +1,4 @@
-import { type GameId } from "../App";
+export type GameId = 'minetest_game' | 'mineclonia' | 'mineclone2' | 'glitch' | 'blockbomber';
 
 // Language options from the original launcher.js
 const SUPPORTED_LANGUAGES: [string, string][] = [

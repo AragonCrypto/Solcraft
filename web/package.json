@@ -9,12 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@solana/wallet-adapter-base": "^0.9.27",
+    "@solana/wallet-adapter-phantom": "^0.9.29",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.39",
+    "@solana/web3.js": "^1.98.4",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.20",
+    "dexie": "^4.4.2",
+    "fflate": "^0.8.2",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-qr-code": "^2.0.21",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

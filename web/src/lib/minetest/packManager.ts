@@ -1,4 +1,4 @@
-import { type MinetestConsole } from "../../utils/GlobalContext";
+import { type MinetestConsole } from "./GlobalContext";
 
 // Class to handle resource packs similar to the original launcher
 export default class PackManager {
