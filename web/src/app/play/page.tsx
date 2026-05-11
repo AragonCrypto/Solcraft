@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Transaction, TransactionInstruction, PublicKey } from "@solana/web3.js";
+
 import { CharacterSetupModal } from "@/components/game/CharacterSetupModal";
 import { PlayerDashboardModal } from "@/components/game/PlayerDashboardModal";
 import { RuntimeScreen } from "@/components/game/RuntimeScreen";
@@ -13,8 +14,8 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
-const BACKEND_URL = "http://api.solcraft.me:4000";
-const PROJECT_WALLET = "11111111111111111111111111111111";
+// HIER IST DEINE SERVER-IP HINTERLEGT!
+const BACKEND_URL = "http://116.203.126.146:4000";
 
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
@@ -29,31 +30,38 @@ function PlayPageContent() {
   const [backendWallet, setBackendWallet] = useState("");
   const [gameOptions, setGameOptions] = useState<GameOptionsLocal | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [displayProgress, setDisplayProgress] = useState(0);
 
+  const [displayProgress, setDisplayProgress] = useState(0);
   const isReady = prefetchData.status.base === 'done' && prefetchData.status.voxelibre === 'done';
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 1. EXISTIERENDEN SPIELER CHECKEN
   useEffect(() => {
     if (connected && publicKey) {
+      // Prefetch starten
       executePrefetch('mineclone2');
       setPlayState("checking");
 
+      // Backend anfragen: Kennt die Datenbank diese Phantom Wallet schon?
       fetch(`${BACKEND_URL}/api/auth/${publicKey.toBase58()}`)
         .then(res => res.json())
         .then(data => {
-          if (data.exists) {
+          if (data.exists && data.player) {
+            // Spieler gefunden! Springe direkt zum Dashboard
             setPlayerName(data.player.player_name);
             setBackendWallet(data.player.backend_wallet_pubkey);
             setPlayState("dashboard");
           } else {
+            // Neuer Spieler -> Muss sich einen Namen aussuchen
             setPlayState("setup");
           }
         })
         .catch(err => {
-          console.error("Auth Fetch Error:", err);
+          console.error("Datenbank-Verbindungsfehler:", err);
+          // Fallback, falls Server down ist
           setPlayState("setup");
         });
     } else {
@@ -61,11 +69,12 @@ function PlayPageContent() {
     }
   }, [connected, publicKey, executePrefetch]);
 
-  // Fortschrittsbalken Logik
+  // Download-Fortschrittsbalken
   useEffect(() => {
     const baseStatus = prefetchData.status.base === 'done' ? 1 : (typeof prefetchData.status.base === 'number' ? prefetchData.status.base : 0);
     const voxelStatus = prefetchData.status.voxelibre === 'done' ? 1 : (typeof prefetchData.status.voxelibre === 'number' ? prefetchData.status.voxelibre : 0);
     const total = (baseStatus + voxelStatus) / 2 * 100;
+
     setDisplayProgress(prev => {
       const diff = total - prev;
       if (diff > 0) return prev + diff * 0.1;
@@ -73,24 +82,37 @@ function PlayPageContent() {
     });
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER MINTEN
+  // 2. NEUEN SPIELER MINTEN (SICHERER SOLANA TRANSACTION FLOW)
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
-      let signature = "manual_no_fee";
+      let signature = "manual_registration_no_tx";
 
-      // Solana Transaktion signieren lassen, wenn "Liquid"
       if (mode === "Liquid") {
+        if (!publicKey) throw new Error("Wallet not connected");
+
+        // DIE SICHERE METHODE: Ein Memo auf die Blockchain schreiben (Kosten: Fast 0 SOL)
+        // Das verhindert Phantom "Simulation Failed" oder "Malicious" Warnungen!
         const tx = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey!,
-            toPubkey: new PublicKey(PROJECT_WALLET),
-            lamports: 0.1 * LAMPORTS_PER_SOL,
+          new TransactionInstruction({
+            keys: [{ pubkey: publicKey, isSigner: true, isWritable: false }],
+            data: Buffer.from(`Solcraft Player Registration: ${name}`, "utf-8"),
+            programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"), // Offizielles Solana Memo Program
           })
         );
+
+        // EXTREM WICHTIG FÜR PHANTOM: Wir müssen einen frischen Blockhash holen!
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+
+        // signAndSendTransaction wird hier von der Wallet-Adapter Library intern absolut fehlerfrei aufgerufen
         signature = await sendTransaction(tx, connection);
+
+        // Warten, bis das Netzwerk die Transaktion bestätigt hat
+        await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature }, 'confirmed');
       }
 
-      // Backend aufrufen um den Player & die Custodial Wallet in DB zu erstellen
+      // 3. WENN TX ERFOLGREICH -> BACKEND INFORMIEREN UND CUSTODIAL WALLET GENERIEREN LASSEN
       const res = await fetch(`${BACKEND_URL}/api/player/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -103,26 +125,38 @@ function PlayPageContent() {
       });
 
       const data = await res.json();
+
       if (data.success) {
         setPlayerName(name);
-        setBackendWallet(data.backend_wallet); // Die Custodial Wallet!
+        setBackendWallet(data.backend_wallet); // Die Custodial Wallet für den QR Code!
         setPlayState("dashboard");
       } else {
-        alert("Error creating player: " + data.error);
+        alert("Server Fehler: " + data.error);
       }
-    } catch (err) {
-      console.error("Minting failed:", err);
-      alert("Transaction failed or rejected.");
+    } catch (err: any) {
+      console.error("Minting fehlgeschlagen:", err);
+      // Wenn der User in Phantom auf "Abbrechen" klickt, fangen wir das hier ab
+      if (err.message?.includes("User rejected")) {
+        alert("Transaktion abgebrochen. Du musst signieren, um Liquid Player zu werden.");
+      } else {
+        alert("Transaktion fehlgeschlagen. Prüfe deine SOL-Balance (Devnet).");
+      }
     }
   };
 
   const handleJoin = async () => {
-    try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) { }
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (e) {
+      console.warn("Fullscreen request failed", e);
+    }
 
     if (isReady && publicKey) {
       const options: GameOptionsLocal = {
         language: 'en',
-        proxy: 'wss://eu1.dustlabs.io/mtproxy',
+        proxy: 'wss://eu1.dustlabs.io/mtproxy', // Production WebSocket Proxy
         storagePolicy: 'indexeddb',
         minetestArgs: new MinetestArgs(),
         mode: 'local',
@@ -134,7 +168,7 @@ function PlayPageContent() {
       options.minetestArgs.address = '116.203.126.146';
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
-      options.minetestArgs.password = 'Solcraft123'; // Oder dynamisch generiert
+      options.minetestArgs.password = 'Solcraft123'; // Wird für die Game-Session genutzt
 
       setGameOptions(options);
       setPlayState("playing");
@@ -142,7 +176,15 @@ function PlayPageContent() {
   };
 
   if (playState === "playing" && gameOptions) {
-    return <RuntimeScreen gameOptions={gameOptions} onGameStatus={(s) => { if (s === 'failed') setPlayState("dashboard"); }} zipLoaderPromise={null} />;
+    return (
+      <RuntimeScreen
+        gameOptions={gameOptions}
+        onGameStatus={(status) => {
+          if (status === 'failed') setPlayState("dashboard");
+        }}
+        zipLoaderPromise={null}
+      />
+    );
   }
 
   return (
@@ -151,17 +193,26 @@ function PlayPageContent() {
         <div className="bg-white/80 backdrop-blur-xl border border-border p-12 rounded-3xl shadow-xl flex flex-col items-center text-center max-w-md w-full">
           <Wallet className="w-16 h-16 text-primary mb-6" />
           <h2 className="text-3xl font-heading font-bold mb-4">Connect Wallet</h2>
-          <p className="text-muted-foreground mb-8">Connect your Phantom wallet to authenticate and enter Solcraft.</p>
-          <div className="wallet-button-wrapper">{mounted && <WalletMultiButton />}</div>
+          <p className="text-muted-foreground mb-8">
+            Connect your Phantom wallet to authenticate and enter Solcraft.
+          </p>
+          <div className="wallet-button-wrapper">
+            {mounted && <WalletMultiButton />}
+          </div>
         </div>
       )}
+
       {playState === "checking" && (
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-lg font-bold">Checking Player Status...</p>
+          <p className="text-lg font-bold">Synchronizing with Server...</p>
         </div>
       )}
-      {playState === "setup" && <CharacterSetupModal onMint={handleMint} />}
+
+      {playState === "setup" && (
+        <CharacterSetupModal onMint={handleMint} />
+      )}
+
       {playState === "dashboard" && publicKey && (
         <PlayerDashboardModal
           playerName={playerName}
@@ -179,13 +230,22 @@ function PlayPageContent() {
 export default function PlayPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
+      {/* Abstract Grid Background */}
       <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+
       <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
-        <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Link>
       </div>
-      <GlobalProvider onExitDetected={() => window.location.reload()} onServerExitIntentDetected={() => { }}>
+
+      <GlobalProvider
+        onExitDetected={() => window.location.reload()}
+        onServerExitIntentDetected={() => { }}
+      >
         <PlayPageContent />
       </GlobalProvider>
     </main>
