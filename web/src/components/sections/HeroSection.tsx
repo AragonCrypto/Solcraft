@@ -13,10 +13,10 @@ import Link from "next/link";
 // ─── Cloud layer ────────────────────────────────────────────────────────────
 // pos at t=0 = left - (|delay|/duration)*200  → designed to be 0-100 (visible)
 const CLOUDS = [
-  { left: 110, dur: 65, delay: -15, top: "5%",  op: 0.80, w: 200 },
+  { left: 110, dur: 65, delay: -15, top: "5%", op: 0.80, w: 200 },
   { left: 105, dur: 80, delay: -40, top: "12%", op: 0.60, w: 150 },
-  { left: 120, dur: 50, delay:  -5, top: "3%",  op: 0.70, w: 240 },
-  { left: 115, dur: 55, delay: -25, top: "8%",  op: 0.58, w: 170 },
+  { left: 120, dur: 50, delay: -5, top: "3%", op: 0.70, w: 240 },
+  { left: 115, dur: 55, delay: -25, top: "8%", op: 0.58, w: 170 },
   { left: 125, dur: 45, delay: -10, top: "15%", op: 0.52, w: 130 },
 ];
 
@@ -29,8 +29,8 @@ function Cloud({ width, opacity }: { width: number; opacity: number }) {
   return (
     <div style={{ position: "relative", width, height: width * 0.44 }}>
       <div style={{ ...base, left: "18%", top: "28%", width: "60%", height: "72%" }} />
-      <div style={{ ...base, left: "38%", top: "0%",  width: "44%", height: "88%" }} />
-      <div style={{ ...base, left: "4%",  top: "34%", width: "50%", height: "64%" }} />
+      <div style={{ ...base, left: "38%", top: "0%", width: "44%", height: "88%" }} />
+      <div style={{ ...base, left: "4%", top: "34%", width: "50%", height: "64%" }} />
       <div style={{ ...base, left: "62%", top: "38%", width: "36%", height: "56%" }} />
     </div>
   );
@@ -59,12 +59,12 @@ export function HeroSection() {
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
 
   // Scroll parallax (positive = moves down as user scrolls)
-  const ySkyScroll   = useTransform(scrollYProgress, [0, 1], [0,  80]);
-  const yFarScroll   = useTransform(scrollYProgress, [0, 1], [0,  55]);
-  const yTextScroll  = useTransform(scrollYProgress, [0, 1], [0,  40]);
-  const yMidScroll   = useTransform(scrollYProgress, [0, 1], [0,  25]);
-  const yTerrScroll  = useTransform(scrollYProgress, [0, 1], [0,  15]);
-  const yFrontScroll = useTransform(scrollYProgress, [0, 1], [0,   5]);
+  const ySkyScroll = useTransform(scrollYProgress, [0, 1], [0, 80]);
+  const yFarScroll = useTransform(scrollYProgress, [0, 1], [0, 55]);
+  const yTextScroll = useTransform(scrollYProgress, [0, 1], [0, 40]);
+  const yMidScroll = useTransform(scrollYProgress, [0, 1], [0, 25]);
+  const yTerrScroll = useTransform(scrollYProgress, [0, 1], [0, 15]);
+  const yFrontScroll = useTransform(scrollYProgress, [0, 1], [0, 5]);
 
   // Mouse tracking
   const rawMX = useMotionValue(0);
@@ -75,7 +75,7 @@ export function HeroSection() {
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
-      rawMX.set(e.clientX - window.innerWidth  / 2);
+      rawMX.set(e.clientX - window.innerWidth / 2);
       rawMY.set(e.clientY - window.innerHeight / 2);
     };
     window.addEventListener("mousemove", move);
@@ -83,16 +83,16 @@ export function HeroSection() {
   }, [rawMX, rawMY]);
 
   // Mouse parallax per depth — ALL SAME direction (positive = follows cursor)
-  const xFar   = useTransform(mx, v => v * 0.012);
-  const yFar   = useTransform(my, v => v * 0.008);
-  const xText  = useTransform(mx, v => v * 0.014);
-  const yText  = useTransform(my, v => v * 0.010);
-  const xMid1  = useTransform(mx, v => v * 0.034);
-  const yMid1  = useTransform(my, v => v * 0.024);
-  const xMid2  = useTransform(mx, v => v * 0.048);
-  const yMid2  = useTransform(my, v => v * 0.033);
-  const xTerr  = useTransform(mx, v => v * 0.065);
-  const yTerr  = useTransform(my, v => v * 0.045);
+  const xFar = useTransform(mx, v => v * 0.012);
+  const yFar = useTransform(my, v => v * 0.008);
+  const xText = useTransform(mx, v => v * 0.014);
+  const yText = useTransform(my, v => v * 0.010);
+  const xMid1 = useTransform(mx, v => v * 0.034);
+  const yMid1 = useTransform(my, v => v * 0.024);
+  const xMid2 = useTransform(mx, v => v * 0.048);
+  const yMid2 = useTransform(my, v => v * 0.033);
+  const xTerr = useTransform(mx, v => v * 0.065);
+  const yTerr = useTransform(my, v => v * 0.045);
   const xFront = useTransform(mx, v => v * 0.088);
   const yFront = useTransform(my, v => v * 0.060);
 
@@ -110,8 +110,8 @@ export function HeroSection() {
 
       {/* ── z-0: Sky atmosphere blobs ── */}
       <motion.div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0, y: ySkyScroll }}>
-        <div style={{ position:"absolute", top:"10%", left:"6%", width:"28vw", height:"7vh", borderRadius:"50%", background:"rgba(255,255,255,0.22)", filter:"blur(32px)" }} />
-        <div style={{ position:"absolute", top:"18%", right:"8%", width:"22vw", height:"5vh", borderRadius:"50%", background:"rgba(255,255,255,0.16)", filter:"blur(24px)" }} />
+        <div style={{ position: "absolute", top: "10%", left: "6%", width: "28vw", height: "7vh", borderRadius: "50%", background: "rgba(255,255,255,0.22)", filter: "blur(32px)" }} />
+        <div style={{ position: "absolute", top: "18%", right: "8%", width: "22vw", height: "5vh", borderRadius: "50%", background: "rgba(255,255,255,0.16)", filter: "blur(24px)" }} />
       </motion.div>
 
       {/* ── z-6: Animated clouds (behind everything) ── */}
@@ -130,7 +130,7 @@ export function HeroSection() {
           alt="" draggable={false}
           style={{
             y: yFar,
-            width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top",
+            width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
             WebkitMaskImage: "linear-gradient(to top, black 90%, transparent 100%)",
             maskImage: "linear-gradient(to top, black 90%, transparent 100%)",
           }}
