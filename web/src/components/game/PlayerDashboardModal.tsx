@@ -43,14 +43,14 @@ export function PlayerDashboardModal({
     setIsReloading(true);
     try {
       // NFTs / Skins laden
-      const nftRes = await fetch(`${BACKEND_URL}/api/nfts/${phantomWallet}`);
+      const nftRes = await fetch('/api/backend/nfts/${phantomWallet}');
       const nftData = await nftRes.json();
       if (nftData.success && nftData.nfts) {
         setNfts(nftData.nfts);
       }
 
       // Web3 Inventar laden
-      const invRes = await fetch(`${BACKEND_URL}/api/inventory/${phantomWallet}`);
+      const invRes = await fetch('/api/backend/inventory/${phantomWallet}');
       const invData = await invRes.json();
 
       if (invData.success && invData.data.web3_inventory) {
@@ -80,7 +80,7 @@ export function PlayerDashboardModal({
   // 2. Speichere den neuen Skin automatisch im Backend, wenn der Index sich ändert
   useEffect(() => {
     if (nfts.length > 0 && phantomWallet) {
-      fetch(`${BACKEND_URL}/api/player/skin`, {
+      fetch(`/api/backend/player/skin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
