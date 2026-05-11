@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #FAFAFA;
+  --color-foreground: #09090B;
+  --color-primary: #2563EB;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F4F4F5;
+  --color-secondary-foreground: #18181B;
+  --color-accent: #E4E4E7;
+  --color-accent-foreground: #18181B;
+  --color-muted: #F4F4F5;
+  --color-muted-foreground: #71717A;
+  --color-border: #E4E4E7;
+  --ease-custom: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --background: #FAFAFA;
+  --foreground: #09090B;
+}
+
+/* Explicit font-family application — reliable across all Tailwind v4 builds */
+body {
+  background-color: #FAFAFA;
+  color: #09090B;
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  cursor: auto;
+}
+
+html {
+  cursor: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-heading {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+}
+
+p,
+span,
+a,
+li,
+label,
+input,
+textarea,
+button {
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  border-color: #E4E4E7;
+}
+
+/* Cloud drift animation */
+@keyframes cloudDrift {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-200vw);
+  }
+}
