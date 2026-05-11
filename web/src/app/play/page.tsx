@@ -176,6 +176,15 @@ function PlayPageContent() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 w-full min-h-screen">
+      <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Home
+        </Link>
+      </div>
+
       {playState === "connect" && (
         <div className="bg-white/80 backdrop-blur-xl border border-border p-12 rounded-3xl shadow-xl flex flex-col items-center text-center max-w-md w-full">
           <Wallet className="w-16 h-16 text-primary mb-6" />
@@ -218,15 +227,6 @@ export default function PlayPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
       <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-
-      <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Home
-        </Link>
-      </div>
 
       <GlobalProvider
         onExitDetected={() => window.location.reload()}

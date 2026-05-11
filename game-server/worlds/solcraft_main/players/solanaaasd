@@ -1,0 +1,65 @@
+breath = 10
+yaw = 240.61
+pitch = 10.5
+extended_attributes = null
+position = (3217.33,15,389.55)
+hp = 19
+name = solanaaasd
+version = 1
+PlayerArgsEnd
+List main 32
+Width 0
+Item default:pick_stone 1 32760
+Item default:cobble 29
+Item default:apple 5
+Empty
+Item default:dirt 25
+Item default:stick 12
+Item default:wood 5
+Item default:silver_sand 5
+Item default:coal_lump 2
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craft 9
+Width 3
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craftpreview 1
+Width 0
+Empty
+EndInventoryList
+List craftresult 1
+Width 0
+Empty
+EndInventoryList
+EndInventory

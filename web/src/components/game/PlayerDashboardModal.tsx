@@ -166,8 +166,8 @@ export function PlayerDashboardModal({
               >
                 {inventory.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                    <p>Dein Web3 Inventar ist leer.</p>
-                    <p className="text-sm mt-2">Baue im Spiel ab oder sende Tokens an deine Custodial Wallet.</p>
+                    <p>Your Web3 inventory is empty.</p>
+                    <p className="text-sm mt-2">Mine blocks in the game or send items to your Custodial Wallet.</p>
                   </div>
                 ) : (
                   inventory.map((item, idx) => (
