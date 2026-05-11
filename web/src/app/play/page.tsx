@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Transaction, TransactionInstruction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 
 import { CharacterSetupModal } from "@/components/game/CharacterSetupModal";
 import { PlayerDashboardModal } from "@/components/game/PlayerDashboardModal";
@@ -17,13 +16,11 @@ import MinetestArgs from "@/lib/minetest/MinetestArgs";
 // 🚀 MIXED CONTENT FIX: Wir nutzen die HTTPS Domain!
 const BACKEND_URL = "https://api.solcraft.me";
 
-// ⚠️ DEINE WALLET-ADRESSE FÜR DIE 0.1 SOL LIQUID GEBÜHR
-const PROJECT_WALLET = "11111111111111111111111111111111";
-
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
 function PlayPageContent() {
-  const { connected, publicKey, sendTransaction } = useWallet();
+  // 🔥 FIX: Wir nutzen jetzt signMessage statt sendTransaction!
+  const { connected, publicKey, signMessage } = useWallet();
   const { connection } = useConnection();
   const executePrefetch = useExecutePrefetch();
   const prefetchData = usePrefetchData();
@@ -84,48 +81,24 @@ function PlayPageContent() {
     });
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER MINTEN (BEIDE MODI MÜSSEN SIGNIEREN!)
+  // 2. NEUEN SPIELER MINTEN (NUR NOCH SIGNIEREN, KEINE GEBÜHREN MEHR!)
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
       if (!publicKey) throw new Error("Wallet not connected");
+      if (!signMessage) throw new Error("Dein Wallet unterstützt keine Signatur-Funktion.");
 
-      const tx = new Transaction();
+      console.log(`Fordere Signatur für die Registrierung an...`);
 
-      // LOGIK-FIX: Liquid sendet SOL, Manual sendet ein Memo. BEIDES erfordert Phantom!
-      if (mode === "Liquid") {
-        tx.add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: new PublicKey(PROJECT_WALLET),
-            lamports: 0.1 * LAMPORTS_PER_SOL,
-          })
-        );
-      } else {
-        tx.add(
-          new TransactionInstruction({
-            keys: [{ pubkey: publicKey, isSigner: true, isWritable: false }],
-            data: Buffer.from(`Solcraft Registration: ${name}`, "utf-8"),
-            programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
-          })
-        );
-      }
+      // 🔥 FIX: Wir erstellen eine einfache Textnachricht, Phantom zeigt hier keine Warnung an!
+      const message = new TextEncoder().encode(
+        `Willkommen bei Solcraft!\n\nBitte signiere diese Nachricht, um deinen Charakter "${name}" zu erstellen.\n\nEs fallen hierfür KEINE Gebühren an.`
+      );
 
-      // Frischen Blockhash holen, um Phantom "Malicious/Simulation" Fehler zu vermeiden
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
+      // Wallet öffnet sich: User muss nur auf "Approve/Sign" klicken.
+      const signatureBytes = await signMessage(message);
 
-      // Senden & Signieren
-      console.log(`Sende ${mode} Transaktion...`);
-      const signature = await sendTransaction(tx, connection);
-
-      // Bestätigen (Mit Fehlerbehandlung für Devnet-Lags)
-      try {
-        await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature }, 'confirmed');
-      } catch (confirmError) {
-        console.warn("Devnet Bestätigung verzögert, fahre trotzdem fort:", confirmError);
-        // Auf Devnet ignorieren wir Timeout-Fehler oft, wenn die TX an sich erfolgreich signiert wurde.
-      }
+      // Signatur in Base64 umwandeln, um sie an das Backend weiterzugeben
+      const signature = Buffer.from(signatureBytes).toString("base64");
 
       // 3. BACKEND INFORMIEREN UND CUSTODIAL WALLET HOLEN
       const res = await fetch(`${BACKEND_URL}/api/player/create`, {
@@ -135,7 +108,7 @@ function PlayPageContent() {
           player_name: name,
           phantom_wallet: publicKey.toBase58(),
           game_mode: mode.toUpperCase(),
-          tx_signature: signature
+          tx_signature: signature // Wir senden jetzt die sichere Text-Signatur!
         })
       });
 
@@ -149,13 +122,11 @@ function PlayPageContent() {
         alert("Server Fehler: " + data.error);
       }
     } catch (err: any) {
-      console.error("Minting fehlgeschlagen:", err);
+      console.error("Registrierung fehlgeschlagen:", err);
       if (err.message?.includes("User rejected")) {
-        alert("Transaktion abgebrochen. Du musst signieren, um mitzuspielen.");
-      } else if (err.message?.includes("insufficient lamports") || err.message?.includes("balance")) {
-        alert("Zu wenig SOL! Hol dir Tokens vom Solana Devnet Faucet.");
+        alert("Registrierung abgebrochen. Du musst die Nachricht signieren, um mitzuspielen.");
       } else {
-        alert("Transaktion fehlgeschlagen. Versuche es nochmal.");
+        alert("Ein Fehler ist aufgetreten. Bitte versuche es nochmal.");
       }
     }
   };
@@ -181,7 +152,7 @@ function PlayPageContent() {
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = '116.203.126.146'; // Game-Server IP bleibt HTTP/Raw IP
+      options.minetestArgs.address = '116.203.126.146'; // Game-Server IP
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
       options.minetestArgs.password = 'Solcraft123';
