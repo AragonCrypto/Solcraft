@@ -19,7 +19,7 @@ function PlayPageContent() {
   const { connected, publicKey } = useWallet();
   const executePrefetch = useExecutePrefetch();
   const prefetchData = usePrefetchData();
-  
+
   const [playState, setPlayState] = useState<PlayState>("connect");
   const [playerName, setPlayerName] = useState("");
   const [gameOptions, setGameOptions] = useState<GameOptionsLocal | null>(null);
@@ -38,7 +38,7 @@ function PlayPageContent() {
     if (connected && publicKey) {
       // Begin prefetching HUGE wasm files in the background
       executePrefetch('mineclone2');
-      
+
       // Mock checking backend for existing player
       setPlayState("checking");
       setTimeout(() => {
@@ -56,11 +56,11 @@ function PlayPageContent() {
     const baseStatus = prefetchData.status.base === 'done' ? 1 : (typeof prefetchData.status.base === 'number' ? prefetchData.status.base : 0);
     const voxelStatus = prefetchData.status.voxelibre === 'done' ? 1 : (typeof prefetchData.status.voxelibre === 'number' ? prefetchData.status.voxelibre : 0);
     const total = (baseStatus + voxelStatus) / 2 * 100;
-    
+
     setDisplayProgress(prev => {
-       const diff = total - prev;
-       if (diff > 0) return prev + diff * 0.1;
-       return prev;
+      const diff = total - prev;
+      if (diff > 0) return prev + diff * 0.1;
+      return prev;
     });
   }, [prefetchData]);
 
@@ -91,8 +91,8 @@ function PlayPageContent() {
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = 'mexico-damages.gl.at.ply.gg';
-      options.minetestArgs.port = 64832;
+      options.minetestArgs.address = '116.203.126.146';
+      options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
       options.minetestArgs.password = 'Solcraft123';
 
@@ -103,12 +103,12 @@ function PlayPageContent() {
 
   if (playState === "playing" && gameOptions) {
     return (
-      <RuntimeScreen 
-        gameOptions={gameOptions} 
+      <RuntimeScreen
+        gameOptions={gameOptions}
         onGameStatus={(status) => {
           if (status === 'failed') setPlayState("dashboard");
-        }} 
-        zipLoaderPromise={null} 
+        }}
+        zipLoaderPromise={null}
       />
     );
   }
@@ -123,15 +123,15 @@ function PlayPageContent() {
             Connect your Phantom wallet to authenticate and enter Solcraft.
           </p>
           <div className="wallet-button-wrapper">
-             {mounted && <WalletMultiButton />}
+            {mounted && <WalletMultiButton />}
           </div>
         </div>
       )}
 
       {playState === "checking" && (
         <div className="flex flex-col items-center">
-           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-           <p className="text-lg font-bold">Checking Player Status...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-lg font-bold">Checking Player Status...</p>
         </div>
       )}
 
@@ -140,12 +140,12 @@ function PlayPageContent() {
       )}
 
       {playState === "dashboard" && publicKey && (
-        <PlayerDashboardModal 
-          playerName={playerName} 
-          publicKey={publicKey.toBase58()} 
-          isReady={isReady} 
-          displayProgress={isReady ? 100 : displayProgress} 
-          onJoin={handleJoin} 
+        <PlayerDashboardModal
+          playerName={playerName}
+          publicKey={publicKey.toBase58()}
+          isReady={isReady}
+          displayProgress={isReady ? 100 : displayProgress}
+          onJoin={handleJoin}
         />
       )}
     </div>
@@ -157,19 +157,19 @@ export default function PlayPage() {
     <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
       {/* Abstract Grid Background */}
       <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-      
+
       <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Link>
       </div>
 
-      <GlobalProvider 
-        onExitDetected={() => window.location.reload()} 
-        onServerExitIntentDetected={() => {}}
+      <GlobalProvider
+        onExitDetected={() => window.location.reload()}
+        onServerExitIntentDetected={() => { }}
       >
         <PlayPageContent />
       </GlobalProvider>

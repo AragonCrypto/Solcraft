@@ -7,3 +7,4 @@ player_backend = sqlite3
 gameid = minetest
 world_name = Test (web)
 server_announce = false
+load_mod_web3_bridge = mods/web3_bridge

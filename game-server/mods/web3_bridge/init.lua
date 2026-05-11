@@ -8,7 +8,7 @@ local function send_inventory_update(player_name, action, item_name, count)
     if not player_name or not item_name then return end
     
     http.fetch({
-        url = "http://localhost:4000/api/mine-block", -- Endpoint reverted to prevent 404
+        url = "https://api.solcraft.me/api/mine-block", -- Endpoint reverted to prevent 404
         post_data = minetest.write_json({
             player = player_name,
             action = action,
