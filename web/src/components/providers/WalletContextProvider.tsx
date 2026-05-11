@@ -10,8 +10,8 @@ import { clusterApiUrl } from "@solana/web3.js";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 export function WalletContextProvider({ children }: { children: React.ReactNode }) {
-  // WIR SIND JETZT OFFIZIELL AUF DEM MAINNET!
-  const endpoint = clusterApiUrl(WalletAdapterNetwork.Mainnet);
+  // WIR NUTZEN DEVNET FÜR DEN HACKATHON (KOSTENLOS & OFFEN)
+  const endpoint = clusterApiUrl(WalletAdapterNetwork.Devnet);
 
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
