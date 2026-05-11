@@ -13,6 +13,9 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
+// DIE HARTE, DIREKTE UND ENDGÜLTIGE VERBINDUNG!
+const BACKEND_URL = "https://api.solcraft.me:4000";
+
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
 function PlayPageContent() {
@@ -33,14 +36,17 @@ function PlayPageContent() {
     setMounted(true);
   }, []);
 
-  // 1. EXISTIERENDEN SPIELER CHECKEN (Über Proxy)
+  // 1. EXISTIERENDEN SPIELER CHECKEN (Direkter HTTPS Aufruf)
   useEffect(() => {
     if (connected && publicKey) {
       executePrefetch('mineclone2');
       setPlayState("checking");
 
-      fetch(`/api/backend/auth/${publicKey.toBase58()}`)
-        .then(res => res.json())
+      fetch(`${BACKEND_URL}/api/auth/${publicKey.toBase58()}`)
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP Fehler: " + res.status);
+          return res.json();
+        })
         .then(data => {
           if (data.exists && data.player) {
             setPlayerName(data.player.player_name);
@@ -51,8 +57,9 @@ function PlayPageContent() {
           }
         })
         .catch(err => {
-          console.error("Backend Proxy Fehler:", err);
-          setPlayState("setup"); // Zeige trotzdem Setup an bei API Fehler
+          console.error("Fehler bei Auth-Prüfung:", err);
+          // Bei Fehlern zum Setup fallen, damit du wenigstens in die App kommst
+          setPlayState("setup");
         });
     } else {
       setPlayState("connect");
@@ -66,36 +73,36 @@ function PlayPageContent() {
     setDisplayProgress((baseStatus + voxelStatus) / 2 * 100);
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER ERSTELLEN (OHNE PHANTOM TRANSAKTION!)
+  // 2. NEUEN SPIELER ERSTELLEN (Direkter HTTPS Aufruf)
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
       if (!publicKey) return;
 
-      console.log("Erstelle Spieler direkt im Backend...");
+      console.log("Sende Spieler-Daten hart an:", BACKEND_URL);
 
-      const res = await fetch(`/api/backend/player/create`, {
+      const res = await fetch(`${BACKEND_URL}/api/player/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           player_name: name,
           phantom_wallet: publicKey.toBase58(),
           game_mode: mode.toUpperCase()
-          // tx_signature wurde im Backend entfernt, also senden wir auch keine mehr
         })
       });
 
+      if (!res.ok) throw new Error("HTTP Fehler: " + res.status);
       const data = await res.json();
 
       if (data.success) {
         setPlayerName(name);
-        setBackendWallet(data.backend_wallet); // Das ist die vom Server generierte Wallet
+        setBackendWallet(data.backend_wallet);
         setPlayState("dashboard");
       } else {
-        alert("Fehler vom Server: " + data.error);
+        alert("Server verweigert Erstellung: " + data.error);
       }
     } catch (err) {
       console.error("Spielererstellung fehlgeschlagen:", err);
-      alert("Konnte den Spieler nicht erstellen. Server erreichbar?");
+      alert("Konnte Backend nicht erreichen! Server offline?");
     }
   };
 
@@ -120,7 +127,7 @@ function PlayPageContent() {
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = '116.203.126.146';
+      options.minetestArgs.address = '116.203.126.146'; // Der WebSocket-Proxy braucht die Raw IP, das ist hier richtig!
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
       options.minetestArgs.password = 'Solcraft123';

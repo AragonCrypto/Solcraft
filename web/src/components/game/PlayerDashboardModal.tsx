@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import QRCode from "react-qr-code";
 
+// DIE HARTE, DIREKTE UND ENDGÜLTIGE VERBINDUNG!
+const BACKEND_URL = "https://api.solcraft.me:4000";
+
 interface PlayerDashboardModalProps {
   playerName: string;
   phantomWallet: string;
@@ -36,20 +39,23 @@ export function PlayerDashboardModal({
   const fetchData = async () => {
     setIsReloading(true);
     try {
-      // 1. Fetch NFTs via Proxy
-      const nftRes = await fetch(`/api/backend/nfts/${phantomWallet}`);
-      const nftData = await nftRes.json();
-      if (nftData.success && nftData.nfts) setNfts(nftData.nfts);
+      // 1. Fetch NFTs direkt
+      const nftRes = await fetch(`${BACKEND_URL}/api/nfts/${phantomWallet}`);
+      if (nftRes.ok) {
+        const nftData = await nftRes.json();
+        if (nftData.success && nftData.nfts) setNfts(nftData.nfts);
+      }
 
-      // 2. Fetch Inventory via Proxy
-      const invRes = await fetch(`/api/backend/inventory/${phantomWallet}`);
-      const invData = await invRes.json();
-
-      if (invData.success && invData.data.web3_inventory) {
-        const invArray = Object.entries(invData.data.web3_inventory)
-          .map(([key, val]) => ({ name: key, amount: val }))
-          .filter(item => (item.amount as number) > 0);
-        setInventory(invArray);
+      // 2. Fetch Inventory direkt
+      const invRes = await fetch(`${BACKEND_URL}/api/inventory/${phantomWallet}`);
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        if (invData.success && invData.data.web3_inventory) {
+          const invArray = Object.entries(invData.data.web3_inventory)
+            .map(([key, val]) => ({ name: key, amount: val }))
+            .filter(item => (item.amount as number) > 0);
+          setInventory(invArray);
+        }
       }
     } catch (err) {
       console.error("Fehler beim Laden der Backend-Daten:", err);
@@ -67,7 +73,7 @@ export function PlayerDashboardModal({
 
   useEffect(() => {
     if (nfts.length > 0 && phantomWallet) {
-      fetch(`/api/backend/player/skin`, {
+      fetch(`${BACKEND_URL}/api/player/skin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
