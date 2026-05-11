@@ -240,8 +240,6 @@ export function HeroSection() {
           width: "100%", height: "100%",
           backgroundImage: "url('/assets/images/hero.png')",
           backgroundSize: "cover", backgroundPosition: "left bottom",
-          WebkitMaskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
-          maskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
           WebkitMaskComposite: "intersect", maskComposite: "intersect",
         }} />
       </motion.div>
@@ -261,8 +259,6 @@ export function HeroSection() {
           width: "100%", height: "100%",
           backgroundImage: "url('/assets/images/hero.png')",
           backgroundSize: "cover", backgroundPosition: "left bottom",
-          WebkitMaskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
-          maskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
           WebkitMaskComposite: "intersect", maskComposite: "intersect",
         }} />
       </motion.div>
@@ -272,7 +268,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 42,
-          bottom: 0, left: "-5%", right: "-5%",
+          bottom: "-20%", left: "-5%", right: "-5%",
           height: "42%",
           x: xFront, y: yFrontScroll,
         }}
@@ -283,8 +279,6 @@ export function HeroSection() {
           style={{
             y: yFront,
             width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
-            WebkitMaskImage: "linear-gradient(to top, black 88%, transparent 100%)",
-            maskImage: "linear-gradient(to top, black 88%, transparent 100%)",
           }}
         />
       </motion.div>
@@ -324,7 +318,6 @@ export function HeroSection() {
         style={{
           position: "absolute", zIndex: 60,
           bottom: 0, left: 0, right: 0, height: "160px",
-          background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,0.0) 100%)",
           pointerEvents: "none",
         }}
       />
