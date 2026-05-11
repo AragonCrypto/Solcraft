@@ -220,8 +220,6 @@ export function HeroSection() {
           style={{
             y: yMid2,
             width: "100%", height: "100%", objectFit: "cover", objectPosition: "center bottom",
-            WebkitMaskImage: "linear-gradient(to top, black 95%, transparent 100%)",
-            maskImage: "linear-gradient(to top, black 95%, transparent 100%)",
           }}
         />
       </motion.div>
@@ -230,7 +228,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 36,
-          bottom: 0, left: "-4%",
+          bottom: "-10%", left: "-4%",
           width: "45%", height: "64%",
           x: xTerr, y: yTerrScroll,
         }}
@@ -248,7 +246,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 38,
-          bottom: 0, right: "-4%",
+          bottom: "-10%", right: "-4%",
           width: "45%", height: "64%",
           x: xTerr, y: yTerrScroll,
           scaleX: -1,
@@ -259,7 +257,6 @@ export function HeroSection() {
           width: "100%", height: "100%",
           backgroundImage: "url('/assets/images/hero.png')",
           backgroundSize: "cover", backgroundPosition: "left bottom",
-          WebkitMaskComposite: "intersect", maskComposite: "intersect",
         }} />
       </motion.div>
 
@@ -268,7 +265,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 42,
-          bottom: "-20%", left: "-5%", right: "-5%",
+          bottom: "-10%", left: "-5%", right: "-5%",
           height: "42%",
           x: xFront, y: yFrontScroll,
         }}
