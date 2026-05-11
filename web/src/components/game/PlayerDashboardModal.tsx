@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import QRCode from "react-qr-code";
 
 // ROHE IP ADRESSE
-const BACKEND_URL = "http://116.203.126.146:4000";
+const BACKEND_URL = "https://116.203.126.146:4000";
 
 interface PlayerDashboardModalProps {
   playerName: string;

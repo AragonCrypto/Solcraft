@@ -14,7 +14,7 @@ import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
 // ROHE IP ADRESSE
-const BACKEND_URL = "http://116.203.126.146:4000";
+const BACKEND_URL = "https://116.203.126.146:4000";
 
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
