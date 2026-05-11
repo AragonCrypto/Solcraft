@@ -265,7 +265,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 100,
-          bottom: "-6%", left: "-5%", right: "-5%",
+          bottom: "-8%", left: "-5%", right: "-5%",
           height: "42%",
           x: xFront, y: yFrontScroll,
         }}
@@ -313,7 +313,7 @@ export function HeroSection() {
       {/* ── z-60: WHITE GRADIENT — fades bottom to page bg; overflow:hidden clips images ── */}
       <div
         style={{
-          position: "absolute", zIndex: 60,
+          position: "absolute", zIndex: 101,
           bottom: 0, left: 0, right: 0, height: "50px",
           background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,0.5) 100%)",
           pointerEvents: "none",
