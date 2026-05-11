@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        // Alle Anfragen an /api/backend/... leitet Vercel unsichtbar an deinen Server weiter!
+        // Leitet alle Frontend-Anfragen sicher an deinen Hetzner-Server weiter!
         source: '/api/backend/:path*',
         destination: 'http://116.203.126.146:4000/api/:path*',
       },
