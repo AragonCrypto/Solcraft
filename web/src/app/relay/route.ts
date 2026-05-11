@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-// DIE HARTE, ROHE IP-ADRESSE!
-const HETZNER_IP = "http://116.203.126.146:4000";
+// NUTZE DIE HTTPS DOMAIN (UMGEHT FIREWALL-TIMEOUTS)
+const HETZNER_IP = "https://api.solcraft.me";
 
 export async function POST(req: Request) {
     try {
