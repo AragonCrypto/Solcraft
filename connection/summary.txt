@@ -1,0 +1,84 @@
+# SOLCRAFT METAVERSE - TECHNISCHE DOKUMENTATION & ARCHITEKTUR
+
+Diese Dokumentation dient als umfassender Guide für Entwickler und KIs, um die Funktionsweise, Struktur und den Datenfluss des SolCraft Projekts zu verstehen.
+
+---
+
+## 1. DIE VISION & ARCHITEKTUR-LOGIK
+SolCraft ist kein gewöhnliches Spiel, sondern eine **Brücke zwischen einer Voxel-Welt und der Solana-Blockchain**. 
+Das Kernkonzept basiert auf der Trennung von:
+1. **Main Account (Wallet):** Die Phantom Wallet des Nutzers hält die Assets und Identität.
+2. **Sub-Character (In-Game):** Ein im Frontend gewählter Name, der als temporäre Identität in der Spielwelt dient, aber fest mit der Wallet verknüpft ist.
+
+---
+
+## 2. SYSTEM-FLOWCHART (DATENFLUSS)
+
+```mermaid
+graph TD
+    subgraph Browser_Client [Browser Client]
+        A[Phantom Wallet] -->|Auth| B[React Frontend]
+        B -->|Mint Player| C[Minetest WASM Engine]
+        C -->|User Input| D[Pointer Lock / UI Bridge]
+    end
+
+    subgraph Networking [Networking Layer]
+        C <==>|WebSocket| E[WSS Proxy: Dustlabs]
+        E <==>|UDP| F[Playit.gg Tunnel]
+        F <==>|UDP| G[Local Luanti Server]
+    end
+
+    subgraph Backend_Web3 [Backend & Web3]
+        G -->|Event Trigger| H[Lua Mod: web3_bridge]
+        H -->|HTTP POST| I[Node.js Backend: Port 4000]
+        I -->|Update| J[(Solana Database / Blockchain)]
+    end
+```
+
+---
+
+## 3. DETAILLIERTE MECHANISMEN
+
+### A. Frontend & WASM Integration (`test-setup copy/app`)
+- **RuntimeScreen (`index.tsx`):** Dies ist der Container für die Emscripten-WASM-Engine. 
+  - **Pointer-Lock Hijack:** Um das native Minetest-Menü durch ein professionelles React-Menü zu ersetzen, wird `document.exitPointerLock` überschrieben. Das System erkennt, ob das Spiel die Maus freigibt (für das Inventar) oder ob der Nutzer die Maus erzwingt (ESC/Alt-Tab). Nur bei Letzterem erscheint das Pausenmenü.
+  - **Sound:** Die Audio-Engine wird beim Start über `emloop_init_sound()` initialisiert.
+  - **Watchdog:** Ein 60-Sekunden Timer stellt sicher, dass die Seite neu lädt, falls der WASM-Boot hängen bleibt.
+
+### B. Das Netzwerk-Wunder
+- Da Browser kein UDP (das native Protokoll von Minetest) sprechen, nutzt SolCraft einen **WSS-Proxy**. Dieser übersetzt die WebSockets des Browsers in Echtzeit in UDP-Pakete. 
+- Ein **playit.gg Tunnel** sorgt dafür, dass der lokale Luanti-Server von überall auf der Welt erreichbar ist, ohne dass Port-Forwarding am Router nötig ist.
+
+### C. Event-Driven Sync (`web3_bridge/init.lua`)
+Statt das Inventar ständig abzufragen (Polling), nutzt SolCraft ein rein **event-basiertes System**. Die Mod reagiert auf:
+- `on_dignode` / `on_placenode`: Abbauen und Bauen.
+- `on_craft`: Erkennt das neue Item UND zieht die verbrauchten Zutaten ab.
+- `on_item_pickup` / `item_drop`: Items vom Boden aufheben oder wegwerfen.
+- `on_player_inventory_action`: Items in/aus Truhen legen.
+Jedes dieser Events triggert sofort einen HTTP-Webhook an das Backend.
+
+---
+
+## 4. DATEI-STRUKTUR & VERANTWORTLICHKEITEN
+
+### 📂 `test-setup copy/app/src/`
+- **`App.tsx`:** Das Herz der Solana-Wallet-Anbindung und des Player-Minting-Prozesses.
+- **`components/RuntimeScreen/index.tsx`:** Die Schnittstelle zwischen JavaScript und der C++ Game-Engine. Handhabt UI-Overlays und Engine-Konfiguration.
+- **`utils/MinetestArgs.ts`:** Definiert die Start-Parameter für die Engine (Proxy, IP, Name, Port).
+
+### 📂 `server/luanti-5.15.2-win64/`
+- **`bin/luanti.exe`:** Der eigentliche Server-Prozess.
+- **`mods/web3_bridge/init.lua`:** Das Gehirn der Web3-Anbindung. Hier liegt die Logik für die Inventar-Synchronisation.
+
+### 📂 `backend/`
+- **`server.js`:** Ein Express-Server, der als API-Gateway fungiert. Er nimmt die Webhooks der LUA-Mod entgegen und setzt die Sicherheits-Header (COOP/COEP), damit der Browser den Multi-Threaded WASM-Code ausführen darf.
+
+---
+
+## 5. TECHNISCHER STATUS QUO
+Das Projekt befindet sich im Zustand der **"Feature-Complete Connectivity"**. 
+- Der Login-Flow ist stabil.
+- Das Pausen- und Inventar-Management im Browser ist fehlerfrei.
+- Die Echtzeit-Synchronisation jeder Inventar-Bewegung an das Backend ist implementiert.
+
+**Wichtig für die KI:** Alle In-Game-Aktionen werden aktuell an den Endpoint `http://localhost:4000/api/mine-block` gesendet. Die Payload enthält immer den Spielernamen, die Aktion (`add`, `remove`, `die`), das Item-ID und die Anzahl.

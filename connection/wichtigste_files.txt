@@ -1,0 +1,5 @@
+Wichtigste Dateien für die Solana-Integration:
+1. app/src/App.tsx -> Beinhaltet den React Entry Point und die Start-Argumente (AutoLoader / Single Button)
+2. app/src/components/RuntimeScreen/index.tsx -> Hier wird die WASM-Engine (Emscripten) konfiguriert und die Argumente als C-argv übergeben.
+3. app/src/utils/MinetestArgs.ts -> Definition der möglichen Kommandozeilenargumente.
+4. server.js -> Express Server für die statischen Dateien und Cross-Origin Header.

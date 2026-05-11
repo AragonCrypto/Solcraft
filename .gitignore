@@ -1,0 +1,19 @@
+# Node
+node_modules/
+npm-debug.log
+.env
+.env.local
+
+# Next.js
+.next/
+out/
+build/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Luanti / Minetest
+game-server/debug.txt
+game-server/bin/*.exe
+game-server/bin/*.dll
