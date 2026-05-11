@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import QRCode from "react-qr-code";
 
-// DIE HARTE, DIREKTE UND ENDGÜLTIGE VERBINDUNG!
-const BACKEND_URL = "https://api.solcraft.me:4000";
+// ROHE IP ADRESSE
+const BACKEND_URL = "http://116.203.126.146:4000";
 
 interface PlayerDashboardModalProps {
   playerName: string;
@@ -39,14 +39,12 @@ export function PlayerDashboardModal({
   const fetchData = async () => {
     setIsReloading(true);
     try {
-      // 1. Fetch NFTs direkt
       const nftRes = await fetch(`${BACKEND_URL}/api/nfts/${phantomWallet}`);
       if (nftRes.ok) {
         const nftData = await nftRes.json();
         if (nftData.success && nftData.nfts) setNfts(nftData.nfts);
       }
 
-      // 2. Fetch Inventory direkt
       const invRes = await fetch(`${BACKEND_URL}/api/inventory/${phantomWallet}`);
       if (invRes.ok) {
         const invData = await invRes.json();

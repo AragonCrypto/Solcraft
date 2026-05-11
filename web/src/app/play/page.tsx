@@ -13,8 +13,8 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
-// DIE HARTE, DIREKTE UND ENDGÜLTIGE VERBINDUNG!
-const BACKEND_URL = "https://api.solcraft.me:4000";
+// ROHE IP ADRESSE
+const BACKEND_URL = "http://116.203.126.146:4000";
 
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
@@ -36,7 +36,7 @@ function PlayPageContent() {
     setMounted(true);
   }, []);
 
-  // 1. EXISTIERENDEN SPIELER CHECKEN (Direkter HTTPS Aufruf)
+  // 1. EXISTIERENDEN SPIELER CHECKEN
   useEffect(() => {
     if (connected && publicKey) {
       executePrefetch('mineclone2');
@@ -58,7 +58,6 @@ function PlayPageContent() {
         })
         .catch(err => {
           console.error("Fehler bei Auth-Prüfung:", err);
-          // Bei Fehlern zum Setup fallen, damit du wenigstens in die App kommst
           setPlayState("setup");
         });
     } else {
@@ -66,19 +65,16 @@ function PlayPageContent() {
     }
   }, [connected, publicKey, executePrefetch]);
 
-  // Download-Fortschrittsbalken
   useEffect(() => {
     const baseStatus = prefetchData.status.base === 'done' ? 1 : (typeof prefetchData.status.base === 'number' ? prefetchData.status.base : 0);
     const voxelStatus = prefetchData.status.voxelibre === 'done' ? 1 : (typeof prefetchData.status.voxelibre === 'number' ? prefetchData.status.voxelibre : 0);
     setDisplayProgress((baseStatus + voxelStatus) / 2 * 100);
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER ERSTELLEN (Direkter HTTPS Aufruf)
+  // 2. NEUEN SPIELER ERSTELLEN
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
       if (!publicKey) return;
-
-      console.log("Sende Spieler-Daten hart an:", BACKEND_URL);
 
       const res = await fetch(`${BACKEND_URL}/api/player/create`, {
         method: "POST",
@@ -102,7 +98,7 @@ function PlayPageContent() {
       }
     } catch (err) {
       console.error("Spielererstellung fehlgeschlagen:", err);
-      alert("Konnte Backend nicht erreichen! Server offline?");
+      alert("Konnte Backend nicht erreichen! Server offline oder Firewall blockiert.");
     }
   };
 
@@ -111,9 +107,7 @@ function PlayPageContent() {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
-    } catch (e) {
-      console.warn("Fullscreen request failed", e);
-    }
+    } catch (e) { }
 
     if (isReady && publicKey) {
       const options: GameOptionsLocal = {
@@ -127,7 +121,7 @@ function PlayPageContent() {
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = '116.203.126.146'; // Der WebSocket-Proxy braucht die Raw IP, das ist hier richtig!
+      options.minetestArgs.address = '116.203.126.146';
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
       options.minetestArgs.password = 'Solcraft123';
@@ -193,20 +187,12 @@ export default function PlayPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
       <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-
       <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
-        >
+        <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border">
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Link>
       </div>
-
-      <GlobalProvider
-        onExitDetected={() => window.location.reload()}
-        onServerExitIntentDetected={() => { }}
-      >
+      <GlobalProvider onExitDetected={() => window.location.reload()} onServerExitIntentDetected={() => { }}>
         <PlayPageContent />
       </GlobalProvider>
     </main>
