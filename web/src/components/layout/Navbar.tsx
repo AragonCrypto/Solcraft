@@ -43,8 +43,17 @@ export function Navbar() {
       <div className="container mx-auto px-6 md:px-12 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group z-50">
-          <div className="w-7 h-7 rounded-[4px] bg-foreground text-background flex items-center justify-center font-bold font-heading text-sm">
-            S
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img 
+              src="/assets/images/logo.png" 
+              alt="Solcraft Logo" 
+              className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+              onError={(e) => {
+                // Fallback if image doesn't exist yet
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="w-7 h-7 rounded-[4px] bg-foreground text-background flex items-center justify-center font-bold font-heading text-sm">S</div>';
+              }}
+            />
           </div>
           <span className="font-heading font-bold text-base tracking-[0.15em] uppercase text-foreground group-hover:opacity-70 transition-opacity duration-200">
             Solcraft

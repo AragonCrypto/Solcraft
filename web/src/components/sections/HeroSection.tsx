@@ -126,7 +126,7 @@ export function HeroSection() {
         }}
       >
         <motion.img
-          src="/images/hero-far-bg.jpg"
+          src="/assets/images/hero-far-bg.png"
           alt="" draggable={false}
           style={{
             y: yFar,
@@ -193,7 +193,7 @@ export function HeroSection() {
         }}
       >
         <motion.img
-          src="/images/hero-mid-left.png"
+          src="/assets/images/hero-mid-left.png"
           alt="" draggable={false}
           style={{
             y: yMid1,
@@ -215,7 +215,7 @@ export function HeroSection() {
         }}
       >
         <motion.img
-          src="/images/hero-mid-right.png"
+          src="/assets/images/hero-mid-right.png"
           alt="" draggable={false}
           style={{
             y: yMid2,
@@ -238,7 +238,7 @@ export function HeroSection() {
         <motion.div style={{
           y: yTerr,
           width: "100%", height: "100%",
-          backgroundImage: "url('/hero.jpg')",
+          backgroundImage: "url('/assets/images/hero.png')",
           backgroundSize: "cover", backgroundPosition: "left bottom",
           WebkitMaskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
           maskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
@@ -259,7 +259,7 @@ export function HeroSection() {
         <motion.div style={{
           y: yTerr,
           width: "100%", height: "100%",
-          backgroundImage: "url('/hero.jpg')",
+          backgroundImage: "url('/assets/images/hero.png')",
           backgroundSize: "cover", backgroundPosition: "left bottom",
           WebkitMaskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
           maskImage: "linear-gradient(to right, black 40%, transparent 100%), linear-gradient(to top, black 94%, transparent 100%)",
@@ -278,7 +278,7 @@ export function HeroSection() {
         }}
       >
         <motion.img
-          src="/images/hero-foreground.png"
+          src="/assets/images/hero-foreground.png"
           alt="" draggable={false}
           style={{
             y: yFront,

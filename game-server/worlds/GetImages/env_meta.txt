@@ -1,7 +1,7 @@
-day_count = 3
+day_count = 5
 lbm_introduction_times = moretrees:restart_coconut_regrow_timer~0;moretrees:convert_existing_cocos_palms_to_regrow_coconuts~0;doors:replace_xpanes_door_steel_bar~0;xpanes:gen2~0;doors:replace_doors_door_glass~0;default:upgrade_chest_v2~0;doors:replace_doors_door_wood~0;default:3dtorch~0;doors:replace_doors_door_steel~0;moretrees:restart_dates_regrow_timer~0;default:convert_saplings_to_node_timer~0;farming:start_nodetimer_cotton~0;default:upgrade_chest_locked_v2~0;farming:start_nodetimer_wheat~0;doors:replace_doors_door_obsidian_glass~0;
 lbm_introduction_times_version = 1
-time_of_day = 19047
+time_of_day = 23902
 last_clear_objects_time = 0
-game_time = 30645
+game_time = 33287
 EnvArgsEnd

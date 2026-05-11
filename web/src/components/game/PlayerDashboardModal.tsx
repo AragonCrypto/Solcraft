@@ -13,11 +13,11 @@ interface PlayerDashboardModalProps {
   onJoin: () => void;
 }
 
-const SKINS = ["/skins/default.png", "/skins/premium.png"];
+const SKINS = ["/assets/skins/default.png", "/assets/skins/premium.png"];
 const MOCK_INVENTORY = [
-  { id: 1, name: "Solana Wood", amount: 24, image: "/tokens/wood.png" },
-  { id: 2, name: "Iron Block", amount: 5, image: "/tokens/iron.png" },
-  { id: 3, name: "SolCraft Pickaxe", amount: 1, image: "/tokens/pickaxe.png" },
+  { id: 1, name: "Solana Wood", amount: 24, image: "/assets/resources/tokens/wood.png" },
+  { id: 2, name: "Iron Block", amount: 5, image: "/assets/resources/tokens/iron.png" },
+  { id: 3, name: "SolCraft Pickaxe", amount: 1, image: "/assets/resources/tokens/pickaxe.png" },
 ];
 
 export function PlayerDashboardModal({

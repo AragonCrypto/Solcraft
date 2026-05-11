@@ -8,21 +8,21 @@ const features = [
     title: "Browser-Native",
     description:
       "Frictionless onboarding via WebAssembly. Connect your Phantom wallet and spawn instantly. No 2GB downloads. Play in your tab.",
-    image: "/images/browser-native.jpg",
+    image: "/assets/images/browser-native.png",
     gridArea: "browser",
   },
   {
     title: "Permadeath & Full Loot",
     description:
       "Step outside the safe zone and risk it all. If you die, your character is wiped and your on-chain assets drop to the floor. No second chances.",
-    image: "/images/permadeath.jpg",
+    image: "/assets/images/permadeath.png",
     gridArea: "death",
   },
   {
     title: "100% On-Chain Economy",
     description:
       "Every resource mined is an SPL token. Trade seamlessly using in-game Automated Market Makers. The blockchain is the bank.",
-    image: "/images/on-chain-economy.jpg",
+    image: "/assets/images/on-chain-economy.png",
     gridArea: "economy",
   },
 ];
