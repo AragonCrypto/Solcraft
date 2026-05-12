@@ -1,14 +1,22 @@
-# SolCraft: The Infinite Sovereign Frontier
+<p align="center">
+  <a href="https://solcraft.me">
+    <img src="banner.png" alt="SolCraft Banner" width="100%">
+  </a>
+</p>
 
-SolCraft is an uncompromising, browser-based Voxel-Metaverse built natively for the Solana Blockchain. Developed for the **2026 Colosseum Frontier Hackathon**, it serves as a decentralized sandbox where digital property rights are enforced by code, and survival is the only law.
+<br><br>
 
-In SolCraft, the "Play-to-Earn" model is replaced by a "High-Stakes" economy. Every block you mine is a token; every death is a permanent loss of state. It is a digital frontier with no borders and no centralized oversight.
+# Solcraft: The Infinite Sovereign Frontier
+
+Solcraft is an uncompromising, browser-based Voxel-Metaverse built natively for the Solana Blockchain. Developed for the **2026 Colosseum Frontier Hackathon**, it serves as a decentralized sandbox where digital property rights are enforced by code, and survival is the only law.
+
+In Solcraft, the "Play-to-Earn" model is replaced by a "High-Stakes" economy. Every block you mine is a token; every death is a permanent loss of state. It is a digital frontier with no borders and no centralized oversight.
 
 ---
 
 ## 1. System Architecture & Data Flow
 
-SolCraft utilizes a specialized "Triple-Bridge" architecture to connect the high-performance C++ game engine (Luanti) with the Solana Web3 stack. The system is designed for low-latency, browser-native gameplay.
+Solcraft utilizes a specialized "Triple-Bridge" architecture to connect the high-performance C++ game engine (Luanti) with the Solana Web3 stack. The system is designed for low-latency, browser-native gameplay.
 
 ```mermaid
 graph TD
@@ -36,7 +44,7 @@ graph TD
 ## 2. Core Gameplay Mechanics
 
 ### The World: The Infinite Frontier
-Unlike traditional metaverse projects with artificial land scarcity, SolCraft features an **infinite world** generated procedurally. 
+Unlike traditional metaverse projects with artificial land scarcity, Solcraft features an **infinite world** generated procedurally. 
 - **The Infinite Map:** There are no borders or invisible walls. Players are free to explore, colonize, and build anywhere in the expanding voxel wilderness.
 - **Spawn Sanctuary:** A tiny 10-block radius around the initial spawn point is protected. Beyond this point, the "Sovereign Frontier" begins.
 
@@ -48,7 +56,7 @@ Unlike traditional metaverse projects with artificial land scarcity, SolCraft fe
 
 ## 3. Web3 Integration & The Frontier Economy
 
-SolCraft leverages Solana's speed to ensure that every in-game action has an on-chain reflection.
+Solcraft leverages Solana's speed to ensure that every in-game action has an on-chain reflection.
 
 | Category | Feature | Description |
 | :--- | :--- | :--- |
@@ -63,10 +71,10 @@ SolCraft leverages Solana's speed to ensure that every in-game action has an on-
 
 ## 4. Project Structure
 
-The SolCraft Monorepo is organized to separate game logic, networking, and blockchain interaction.
+The Solcraft Monorepo is organized to separate game logic, networking, and blockchain interaction.
 
 ```text
-📁 solcraft-monorepo
+📁 Solcraft-monorepo
  ┣ 📁 web           # Next.js Frontend: UI, Managed Wallet Interface, and WASM Engine
  ┣ 📁 backend       # Node.js API Gateway: Handles Webhooks, SQL, and Solana Transactions
  ┣ 📁 game-server   # Luanti Engine (Server-side)
@@ -82,7 +90,7 @@ The SolCraft Monorepo is organized to separate game logic, networking, and block
 
 ## 5. Deployment & Infrastructure
 
-- **Frontend:** Hosted on **Vercel** (`https://solcraft.me`).
+- **Frontend:** Hosted on **Vercel** (`https://Solcraft.me`).
 - **Game Server & Backend:** Hosted on a dedicated **Hetzner Cloud** instance. 
 - **Networking:** Utilizes a custom WebSocket Proxy to bridge browser-based clients with the native Luanti UDP protocol.
 - **Database:** **Supabase (SQL)** is used for real-time player metadata and transaction logging.
@@ -99,4 +107,4 @@ Solanium is the heart of the Frontier’s trade.
 
 ---
 
-*SolCraft is an open-source experiment in digital sovereignty. Built for the Frontier.*
+*Solcraft is an open-source experiment in digital sovereignty. Built for the Frontier.*
