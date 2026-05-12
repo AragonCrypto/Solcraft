@@ -26,7 +26,7 @@ export function PitchVideoSection() {
 
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl bg-muted border border-border">
             <iframe
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&showinfo=0&autohide=1"
+              src="https://www.youtube.com/embed/5MJEbiEo1Qw?rel=0&showinfo=0&autohide=1"
               title="Solcraft Pitch Video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
