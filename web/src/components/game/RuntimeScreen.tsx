@@ -287,39 +287,42 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     if (storageManager) storageManager.setMinetestConsole(minetestConsole);
   }, [storageManager, minetestConsole]);
 
+  // --- START ESC & FOCUS FIX ---
   useEffect(() => {
-    const origExit = document.exitPointerLock.bind(document);
-    document.exitPointerLock = function () {
-      (window as any).__game_exited_pointer = true;
-      origExit();
-      setTimeout(() => {
-        (window as any).__game_exited_pointer = false;
-      }, 100);
-    };
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) e.stopPropagation();
+      // Wenn wir im Spiel sind und ESC drücken: Verhindere, dass das Spiel ESC registriert!
+      if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+        document.exitPointerLock(); // Nur Browser-Pointer-Lock beenden, Menü öffnen
+      }
     };
+
+    // Wir greifen die Tasten in der "Capture"-Phase ab, bevor das Canvas sie bekommt
     window.addEventListener('keydown', onKey, true);
+    window.addEventListener('keyup', onKey, true);
+
     const onLockChange = () => {
       if (document.pointerLockElement === canvasRef.current) {
         setIsConnecting(false);
         setIsPaused(false);
+        canvasRef.current?.focus(); // Spiel bekommt Fokus zurück
       } else {
         if (isConnecting) return;
-        if ((window as any).__game_exited_pointer) {
-          (window as any).__game_exited_pointer = false;
-        } else {
-          setIsPaused(true);
-        }
+        setIsPaused(true);
+        canvasRef.current?.blur(); // SPIEL WIRD BLIND FÜR TASTATUR
       }
     };
     document.addEventListener('pointerlockchange', onLockChange);
+
     return () => {
-      document.exitPointerLock = origExit;
       window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('keyup', onKey, true);
       document.removeEventListener('pointerlockchange', onLockChange);
     };
   }, [isConnecting]);
+  // --- ENDE ESC & FOCUS FIX ---
 
   useEffect(() => {
     if (!isConnecting) return;
@@ -329,6 +332,8 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     }, 60_000);
     return () => clearTimeout(t);
   }, [isConnecting]);
+
+
 
   const handleResume = async () => {
     try {
@@ -403,7 +408,10 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
       )}
 
       {isPaused && !isConnecting && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12"
+          onKeyDown={(e) => e.stopPropagation()}
+          onKeyUp={(e) => e.stopPropagation()}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
