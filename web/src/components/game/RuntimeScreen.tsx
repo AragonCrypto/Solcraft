@@ -57,11 +57,14 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
-  // Käfig für Drag & Drop (damit Items nicht aus dem Bildschirm gezogen werden)
+  // Ref für den Drag-Käfig (damit man Items nicht aus dem Bild ziehen kann)
   const dragConstraintsRef = useRef<HTMLDivElement>(null);
 
-  // Ref fürs Pause-Menü, um den Tastatur-Fokus zu stehlen
+  // Ref fürs Pause-Menü, um den Tastatur-Fokus zu erzwingen
   const pauseMenuRef = useRef<HTMLDivElement>(null);
+
+  // Ref um zu wissen, ob WIRKLICH ESC gedrückt wurde
+  const escPressedRef = useRef(false);
 
   const storageManager = useStorageManager();
   const prefetchData = usePrefetchData();
@@ -85,7 +88,66 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
   const [sendAmount, setSendAmount] = useState(1);
   const [isSending, setIsSending] = useState(false);
 
-  // Zieht Daten (AUTO-UPDATE LOGIK)
+  const handleResume = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (_) { }
+    canvasRef.current?.requestPointerLock();
+  };
+
+  // --- BOMBENSICHERER ESCAPE & FOCUS FIX ---
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') {
+        // Fall 1: Wir spielen gerade (Maus ist gelockt) -> REACT MENÜ ÖFFNEN
+        if (document.pointerLockElement === canvasRef.current) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          escPressedRef.current = true;
+          document.exitPointerLock(); // Triggered onLockChange
+        }
+        // Fall 2: React Menü ist schon offen -> REACT MENÜ SCHLIESSEN
+        else if (isPaused) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          handleResume();
+        }
+        // Fall 3: Ingame Inventar ist offen (kein Lock, nicht pausiert) -> Emscripten soll ESC verarbeiten!
+        else {
+          escPressedRef.current = false;
+        }
+      }
+    };
+
+    // Agressive Tastenabfangung
+    window.addEventListener('keydown', onKeyDown, true);
+
+    const onLockChange = () => {
+      if (document.pointerLockElement === canvasRef.current) {
+        // Spieler ist zurück im Spiel
+        setIsConnecting(false);
+        setIsPaused(false);
+        escPressedRef.current = false;
+        canvasRef.current?.focus();
+      } else {
+        if (isConnecting) return;
+        // MAUS IST FREI GEWORDEN:
+        // Öffne das Menü NUR, wenn ESC gedrückt wurde. Wenn "E" gedrückt wurde, passiert nichts!
+        if (escPressedRef.current) {
+          setIsPaused(true);
+          canvasRef.current?.blur(); // Spiel stummschalten
+          setTimeout(() => pauseMenuRef.current?.focus(), 50); // Fokus ans Menü geben
+        }
+      }
+    };
+    document.addEventListener('pointerlockchange', onLockChange);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('pointerlockchange', onLockChange);
+    };
+  }, [isConnecting, isPaused]);
+
   const fetchAssets = useCallback(async () => {
     if (!gameOptions.phantomWallet) return;
     try {
@@ -105,64 +167,17 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     } catch (e) { console.error("Failed to fetch assets", e); }
   }, [gameOptions.phantomWallet]);
 
-  // Wenn pausiert ist -> Sofort laden UND alle 5 Sekunden auto-updaten!
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isPaused) {
       fetchAssets();
-      interval = setInterval(fetchAssets, 5000); // Lädt Items alle 5 Sekunden neu!
-
-      // Fokus ins Menü zwingen, damit Canvas keine Tasten mehr bekommt
-      setTimeout(() => pauseMenuRef.current?.focus(), 100);
+      interval = setInterval(fetchAssets, 5000);
     } else {
       setShowSendModal(false);
       setSelectedAsset(null);
     }
     return () => clearInterval(interval);
   }, [isPaused, fetchAssets]);
-
-  // --- ESCAPE & FOCUS FIX (BOMBENSICHER) ---
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // Wenn das Menü offen ist, schlucken wir JEDE Escape-Eingabe!
-      if (!isConnecting && isPaused && e.code === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return;
-      }
-
-      // Wenn wir im Spiel sind und ESC drücken -> Menü öffnen und Minetest stummschalten
-      if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        document.exitPointerLock();
-      }
-    };
-
-    // Tastendrücke ganz früh abfangen (Capture Phase)
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('keyup', onKey, true);
-
-    const onLockChange = () => {
-      if (document.pointerLockElement === canvasRef.current) {
-        setIsConnecting(false);
-        setIsPaused(false);
-        canvasRef.current?.focus(); // Canvas darf wieder zuhören
-      } else {
-        if (isConnecting) return;
-        setIsPaused(true);
-        canvasRef.current?.blur(); // CANVAS WIRD BLIND FÜR TASTATUR
-      }
-    };
-    document.addEventListener('pointerlockchange', onLockChange);
-
-    return () => {
-      window.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('keyup', onKey, true);
-      document.removeEventListener('pointerlockchange', onLockChange);
-    };
-  }, [isConnecting, isPaused]);
 
   const fixGeometry = useCallback(() => {
     if (!canvasRef.current || !canvasContainerRef.current) return;
@@ -250,7 +265,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
 
   useLayoutEffect(() => {
     window.emloop_ready = () => {
-      minetestConsole.print('emloop_ready called — wrapping C functions...');
       try {
         window.emloop_pause = window.cwrap('emloop_pause', null, []);
         window.emloop_unpause = window.cwrap('emloop_unpause', null, []);
@@ -264,10 +278,8 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
         window.emsocket_init = window.cwrap('emsocket_init', null, []);
         window.emsocket_set_proxy = window.cwrap('emsocket_set_proxy', null, ['number']);
         window.emsocket_set_vpn = window.cwrap('emsocket_set_vpn', null, ['number']);
-        minetestConsole.print('C functions wrapped. Launching game...');
         launchGameRef.current?.();
       } catch (e) {
-        minetestConsole.printErr(`emloop_ready error: ${e}`);
         setIsLoading(false);
       }
     };
@@ -289,24 +301,19 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
 
     const canvas = canvasRef.current;
     const workerInject = `
-      Module['print'] = (text) => {
-        postMessage({cmd:'callHandler',handler:'print',args:[text],threadId:Module['_pthread_self']()});
-      };
-      Module['printErr'] = (text) => {
-        postMessage({cmd:'callHandler',handler:'printErr',args:[text],threadId:Module['_pthread_self']()});
-      };
+      Module['print'] = (text) => { postMessage({cmd:'callHandler',handler:'print',args:[text],threadId:Module['_pthread_self']()}); };
+      Module['printErr'] = (text) => { postMessage({cmd:'callHandler',handler:'printErr',args:[text],threadId:Module['_pthread_self']()}); };
       importScripts('minetest.js');
     `;
 
     window.Module = {
       locateFile: (path: string) => `/minetest/${path}`,
       mainScriptUrlOrBlob: new Blob([workerInject], { type: 'text/javascript' }),
-      preRun: [],
-      postRun: [],
+      preRun: [], postRun: [],
       print: (t: string) => minetestConsole.print(t),
       printErr: (t: string) => minetestConsole.printErr(t),
       canvas,
-      onAbort: () => { minetestConsole.printErr('WASM aborted'); onGameStatus('failed'); },
+      onAbort: () => { onGameStatus('failed'); },
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
         const deps = Math.max(window.Module.totalDependencies, left);
@@ -315,7 +322,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
         window.dispatchEvent(new CustomEvent('minetest-progress', { detail: pct }));
       },
       setStatus: (_: string) => { },
-      onRuntimeInitialized: () => { minetestConsole.print('Runtime initialized.'); },
       onFileChange: (p: string) => storageManager?.fileChanged(p),
       onFileDelete: (p: string) => storageManager?.fileDeleted(p),
       onFullScreen: () => fixGeometry(),
@@ -324,8 +330,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     const script = document.createElement('script');
     script.src = '/minetest/minetest.js';
     script.async = true;
-    script.onerror = () => { minetestConsole.printErr('Failed to load minetest.js'); onGameStatus('failed'); };
-    script.onload = () => { minetestConsole.print('minetest.js loaded.'); };
+    script.onerror = () => onGameStatus('failed');
     document.body.appendChild(script);
 
     const onResize = () => fixGeometry();
@@ -338,13 +343,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     window.addEventListener('minetest-progress', h);
     return () => window.removeEventListener('minetest-progress', h);
   }, []);
-
-  const handleResume = async () => {
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch (_) { }
-    canvasRef.current?.requestPointerLock();
-  };
 
   const handleDragEnd = (event: any, info: any, asset: any) => {
     const dropZone = document.getElementById("send-drop-zone");
@@ -360,7 +358,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     }
   };
 
-  // Setzt Skin übers Backend
   const equipSkin = async (skinId: string) => {
     try {
       await fetch(`${BACKEND_URL}/api/player/skin`, {
@@ -371,7 +368,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
           skin_id: skinId
         })
       });
-      alert(`Skin ${skinId} equipped! Updates in game shortly.`);
+      alert(`Skin equipped! It will appear in game in ~10 seconds.`);
     } catch (e) {
       console.error(e);
     }
@@ -401,7 +398,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
         alert("Transfer failed: " + d.error);
       }
     } catch (e) {
-      console.error(e);
       alert("Transfer error");
     }
     setIsSending(false);
@@ -414,15 +410,11 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
         <div className="absolute inset-0 z-50 bg-background flex flex-col items-center justify-center gap-6">
           <Loader2 className="w-16 h-16 animate-spin text-foreground" />
           <h2 className="text-3xl font-bold font-heading">
-            {isLoading ? 'Booting WebAssembly Engine...' : 'Connecting to Solcraft...'}
+            {isLoading ? 'Booting Engine...' : 'Connecting to Solcraft...'}
           </h2>
-          <p className="text-muted-foreground">Securing connection and loading world data</p>
           {isLoading && (
             <div className="w-64 h-2 bg-secondary rounded-full overflow-hidden mt-4 border border-border">
-              <div
-                className="h-full bg-foreground transition-all duration-75"
-                style={{ width: `${displayProgress}%` }}
-              />
+              <div className="h-full bg-foreground transition-all" style={{ width: `${displayProgress}%` }} />
             </div>
           )}
         </div>
@@ -433,10 +425,10 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
           ref={pauseMenuRef}
           tabIndex={0}
           className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12 outline-none"
-          onKeyDown={(e) => e.stopPropagation()} // WICHTIG: Schluckt alle Tasten im Menü
+          onKeyDown={(e) => e.stopPropagation()}
           onKeyUp={(e) => e.stopPropagation()}
         >
-          {/* DRAG CAGE (Käfig für Items) */}
+          {/* DRAG KÄFIG */}
           <div ref={dragConstraintsRef} className="absolute inset-0 pointer-events-none" />
 
           <motion.div
@@ -444,125 +436,56 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="bg-white/90 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl w-full max-w-6xl h-full max-h-[800px] flex overflow-hidden relative pointer-events-auto"
           >
-            {/* LEFT SECTION: WEB3 DASHBOARD */}
             <div className="flex-1 flex flex-col border-r border-border bg-secondary/20 relative">
-              {/* Tabs */}
               <div className="flex gap-8 p-6 border-b border-border bg-white/50 items-center">
-                <button
-                  onClick={() => setActiveTab('Items')}
-                  className={`text-2xl font-bold font-heading transition-colors ${activeTab === 'Items' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Web3 Items
-                </button>
-                <button
-                  onClick={() => setActiveTab('NFTs')}
-                  className={`text-2xl font-bold font-heading transition-colors ${activeTab === 'NFTs' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  NFTs
-                </button>
+                <button onClick={() => setActiveTab('Items')} className={`text-2xl font-bold font-heading ${activeTab === 'Items' ? 'text-foreground' : 'text-muted-foreground'}`}>Web3 Items</button>
+                <button onClick={() => setActiveTab('NFTs')} className={`text-2xl font-bold font-heading ${activeTab === 'NFTs' ? 'text-foreground' : 'text-muted-foreground'}`}>NFT Skins</button>
               </div>
 
-              {/* Grid */}
               <div className="flex-1 overflow-y-auto p-6 relative">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-32">
                   {activeTab === 'Items' ? (
                     inventory.map((item: any, idx: number) => (
-                      <motion.div
-                        key={idx}
-                        drag
-                        dragConstraints={dragConstraintsRef}
-                        dragElastic={0.1}
-                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
-                        onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'item', data: item })}
-                        className="bg-white border border-border rounded-3xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm cursor-grab active:cursor-grabbing h-48 relative"
-                      >
-                        <div className="absolute top-4 right-4 bg-secondary text-foreground px-3 py-1 rounded-lg text-sm font-bold border border-border">
-                          x{item.amount}
-                        </div>
-                        {/* WICHTIG: draggable={false} */}
-                        <img draggable={false} src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-20 h-20 object-contain drop-shadow-sm pointer-events-none" />
+                      <motion.div key={idx} drag dragConstraints={dragConstraintsRef} dragElastic={0.1} whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }} onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'item', data: item })} className="bg-white border border-border rounded-3xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm cursor-grab active:cursor-grabbing h-48 relative">
+                        <div className="absolute top-4 right-4 bg-secondary text-foreground px-3 py-1 rounded-lg text-sm font-bold border border-border">x{item.amount}</div>
+                        <img draggable={false} src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-20 h-20 object-contain pointer-events-none" />
                         <span className="font-bold text-lg text-foreground text-center break-all">{item.name}</span>
                       </motion.div>
                     ))
                   ) : (
                     nfts.map((nft: any, idx: number) => (
-                      <motion.div
-                        key={idx}
-                        drag
-                        dragConstraints={dragConstraintsRef}
-                        dragElastic={0.1}
-                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
-                        onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'nft', data: nft })}
-                        className="bg-secondary/50 border border-border rounded-3xl flex flex-col items-center justify-center shadow-sm cursor-grab active:cursor-grabbing h-48 overflow-hidden relative group"
-                      >
-                        {/* WICHTIG: draggable={false} */}
+                      <motion.div key={idx} drag dragConstraints={dragConstraintsRef} dragElastic={0.1} whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }} onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'nft', data: nft })} className="bg-secondary/50 border border-border rounded-3xl flex flex-col items-center justify-center shadow-sm cursor-grab active:cursor-grabbing h-48 overflow-hidden relative group">
                         <img draggable={false} src={nft.image} className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-110 pointer-events-none" />
-                        <button
-                          onPointerDown={(e) => { e.stopPropagation(); equipSkin(nft.id); }}
-                          className="absolute bottom-2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full z-10"
-                        >
-                          Equip
-                        </button>
+                        <button onPointerDown={(e) => { e.stopPropagation(); equipSkin(nft.id); }} className="absolute bottom-2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full z-10 hover:scale-105">Equip Skin</button>
                       </motion.div>
                     ))
                   )}
-
-                  {(activeTab === 'Items' && inventory.length === 0) || (activeTab === 'NFTs' && nfts.length === 0) ? (
-                    <div className="col-span-full text-center text-muted-foreground mt-12 text-lg font-medium">
-                      Inventory is empty.
-                    </div>
-                  ) : null}
+                  {(activeTab === 'Items' && inventory.length === 0) || (activeTab === 'NFTs' && nfts.length === 0) ? (<div className="col-span-full text-center text-muted-foreground mt-12 text-lg font-medium">No assets found.</div>) : null}
                 </div>
               </div>
 
-              {/* Drop Zone */}
-              <div id="send-drop-zone" className="absolute bottom-0 left-0 w-full h-32 bg-white/80 backdrop-blur-md border-t border-border flex flex-col items-center justify-center transition-colors shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+              <div id="send-drop-zone" className="absolute bottom-0 left-0 w-full h-32 bg-white/80 backdrop-blur-md border-t border-border flex flex-col items-center justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                 <p className="text-muted-foreground font-bold font-heading text-xl tracking-widest uppercase pointer-events-none">⬇ Drag here to Send ⬇</p>
               </div>
 
-              {/* Send Modal Overlay */}
               <AnimatePresence>
                 {showSendModal && selectedAsset && (
-                  <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-white/90 backdrop-blur-md z-50 flex items-center justify-center p-8"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/90 backdrop-blur-md z-50 flex items-center justify-center p-8">
                     <div className="bg-white border border-border rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col gap-6">
-                      <h3 className="text-3xl font-heading font-bold text-foreground">Send {selectedAsset.type === 'item' ? 'Item' : 'NFT'}</h3>
-
-                      <div className="flex items-center gap-6 p-4 bg-secondary/30 border border-border rounded-2xl">
-                        {selectedAsset.type === 'item' ? (
-                          <>
-                            <div className="bg-white p-2 rounded-xl shadow-sm border border-border">
-                              <img draggable={false} src={`https://api.dicebear.com/7.x/identicon/svg?seed=${selectedAsset.data.name}`} className="w-16 h-16 pointer-events-none" />
-                            </div>
-                            <div className="font-bold text-xl">{selectedAsset.data.name}</div>
-                          </>
-                        ) : (
-                          <>
-                            <img draggable={false} src={selectedAsset.data.image} className="w-20 h-20 rounded-xl object-cover shadow-sm pointer-events-none" />
-                            <div className="font-bold text-xl">Selected NFT</div>
-                          </>
-                        )}
-                      </div>
-
+                      <h3 className="text-3xl font-heading font-bold">Send {selectedAsset.type === 'item' ? 'Item' : 'NFT'}</h3>
                       <div className="flex flex-col gap-3">
                         <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">To Solana Wallet</label>
-                        <input type="text" className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none focus:border-foreground transition-colors" placeholder="Solana Address..." value={sendAddress} onChange={e => setSendAddress(e.target.value)} />
+                        <input type="text" className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none" placeholder="Solana Address..." value={sendAddress} onChange={e => setSendAddress(e.target.value)} />
                       </div>
-
                       {selectedAsset.type === 'item' && (
                         <div className="flex flex-col gap-3">
                           <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Amount (Max: {selectedAsset.data.amount})</label>
-                          <input type="number" min="1" max={selectedAsset.data.amount} className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none focus:border-foreground transition-colors" value={sendAmount} onChange={e => setSendAmount(Number(e.target.value))} />
+                          <input type="number" min="1" max={selectedAsset.data.amount} className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none" value={sendAmount} onChange={e => setSendAmount(Number(e.target.value))} />
                         </div>
                       )}
-
                       <div className="flex gap-4 mt-4">
-                        <button onClick={() => setShowSendModal(false)} className="flex-1 py-4 bg-secondary border border-border rounded-xl font-bold text-foreground hover:bg-border transition-all">Cancel</button>
-                        <button onClick={executeSend} disabled={isSending || !sendAddress} className="flex-1 py-4 bg-white border border-border shadow-sm text-foreground rounded-xl font-bold hover:bg-secondary transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                          {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Items"}
-                        </button>
+                        <button onClick={() => setShowSendModal(false)} className="flex-1 py-4 bg-secondary border border-border rounded-xl font-bold">Cancel</button>
+                        <button onClick={executeSend} disabled={isSending || !sendAddress} className="flex-1 py-4 bg-primary border border-border shadow-sm text-white rounded-xl font-bold">{isSending ? "Sending..." : "Send"}</button>
                       </div>
                     </div>
                   </motion.div>
@@ -570,32 +493,20 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
               </AnimatePresence>
             </div>
 
-            {/* RIGHT SECTION: GAME MENU */}
             <div className="w-80 p-8 flex flex-col gap-4 bg-white/50 border-l border-border relative z-10">
               <h2 className="text-4xl font-heading font-bold mb-8 text-foreground drop-shadow-sm">Paused</h2>
               <p className="text-sm text-muted-foreground mb-4">Click Continue to lock cursor and play.</p>
-
-              <button onClick={handleResume} className="py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all flex items-center justify-center gap-2">Continue</button>
-
+              <button onClick={handleResume} className="py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all">Continue</button>
               <div className="mt-auto">
-                <button onClick={() => window.location.reload()} className="w-full py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all flex items-center justify-center gap-2">Quit Game</button>
+                <button onClick={() => window.location.reload()} className="w-full py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all">Quit Game</button>
               </div>
             </div>
           </motion.div>
         </div>
       )}
 
-      <div
-        ref={canvasContainerRef}
-        style={{ width: '100vw', height: '100vh', overflow: 'hidden', visibility: isConnecting ? 'hidden' : 'visible' }}
-      >
-        <canvas
-          ref={canvasRef}
-          id="canvas"
-          className="emscripten"
-          onContextMenu={e => e.preventDefault()}
-          tabIndex={-1}
-        />
+      <div ref={canvasContainerRef} style={{ width: '100vw', height: '100vh', overflow: 'hidden', visibility: isConnecting ? 'hidden' : 'visible' }}>
+        <canvas ref={canvasRef} id="canvas" className="emscripten" onContextMenu={e => e.preventDefault()} tabIndex={-1} />
       </div>
     </div>
   );
