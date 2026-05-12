@@ -1,32 +1,32 @@
-# SolCraft: The Sovereign Frontier
+# SolCraft: The Infinite Sovereign Frontier
 
-SolCraft is an uncompromising, browser-based Voxel-Metaverse built natively for the Solana Blockchain. It was created for the **2026 Colosseum Frontier Hackathon** to challenge the status quo of "walled garden" gaming.
+SolCraft is an uncompromising, browser-based Voxel-Metaverse built natively for the Solana Blockchain. Developed for the **2026 Colosseum Frontier Hackathon**, it serves as a decentralized sandbox where digital property rights are enforced by code, and survival is the only law.
 
-In SolCraft, there are no artificial boundaries, no centralized censorship, and no safety nets. Every block you mine is a token you own; every death you suffer is a loss you feel. It is a digital state of nature where the blockchain serves as the ultimate laws of physics.
+In SolCraft, the "Play-to-Earn" model is replaced by a "High-Stakes" economy. Every block you mine is a token; every death is a permanent loss of state. It is a digital frontier with no borders and no centralized oversight.
 
 ---
 
 ## 1. System Architecture & Data Flow
 
-SolCraft utilizes a unique "Triple-Bridge" architecture to connect a high-performance C++ game engine (Luanti) with the modern Web3 stack.
+SolCraft utilizes a specialized "Triple-Bridge" architecture to connect the high-performance C++ game engine (Luanti) with the Solana Web3 stack. The system is designed for low-latency, browser-native gameplay.
 
 ```mermaid
 graph TD
     subgraph Client_Layer [Client: Browser & WASM]
-        A[User Wallet: Phantom/Backpack] <--> B[Next.js Frontend]
+        A[User Wallet: Managed via Backend] <--> B[Next.js Frontend]
         B <--> C[Luanti WASM Engine]
-        C --> D[Pointer Lock / UI Bridge]
+        C --> D[Custom UI Bridge]
     end
 
-    subgraph Transport_Layer [Networking: WebSocket & Proxy]
+    subgraph Transport_Layer [Networking]
         C <==>|Encapsulated UDP| E[WSS Proxy]
-        E <==>|playit.gg Tunnel| F[Remote Game Server]
+        E <==>|Direct TCP/UDP| F[Hetzner Game Server]
     end
 
     subgraph Backend_Layer [Infrastructure & Blockchain]
         F -->|Event Webhooks| G[Lua: web3_bridge Mod]
         G <-->|HTTP POST/GET| H[Node.js API Gateway]
-        H <-->|RPC/Transaction| I[(Solana Blockchain)]
+        H <-->|Transaction Management| I[(Solana Blockchain)]
         H <-->|Persistence| J[(Supabase SQL)]
     end
 ```
@@ -35,70 +35,68 @@ graph TD
 
 ## 2. Core Gameplay Mechanics
 
-### The World: The Prison Island
-The game world is set on a hand-crafted, resource-rich island surrounded by a seemingly infinite ocean. 
-- **The Ocean Loop:** To maintain the immersion of a persistent world without "invisible walls," SolCraft implements a seamless teleportation loop. Sailing too far into the horizon will result in a seamless transition to the opposite side of the island (The Pac-Man Effect).
-- **The Spawn Sanctuary:** A minuscule 10-block radius around the starting point is protected from griefing. Beyond this point, you are on your own.
+### The World: The Infinite Frontier
+Unlike traditional metaverse projects with artificial land scarcity, SolCraft features an **infinite world** generated procedurally. 
+- **The Infinite Map:** There are no borders or invisible walls. Players are free to explore, colonize, and build anywhere in the expanding voxel wilderness.
+- **Spawn Sanctuary:** A tiny 10-block radius around the initial spawn point is protected. Beyond this point, the "Sovereign Frontier" begins.
 
-### The Stakes: High-Stakes Survival
-- **Omnipresent PvP:** Combat is enabled everywhere outside the spawn. 
-- **Permadeath & Full Loot:** Death is final. Upon a character's demise, the Lua engine clears the player’s inventory, spawns all items as physical entities on the ground for others to scavenge, and resets the character’s local state.
+### The Stakes: Hardcore Survival
+- **Omnipresent PvP:** Outside the spawn sanctuary, combat is enabled globally. 
+- **Permadeath:** Death has real consequences. Upon a player's death, the Lua engine clears the character's inventory, spawns all items as physical entities on the ground for looting, and resets the character’s local state.
 
 ---
 
-## 3. Web3 Integration & The In-Game Economy
+## 3. Web3 Integration & The Frontier Economy
 
-Every action in SolCraft has an on-chain consequence. The game does not just "support" crypto; it is built upon it.
+SolCraft leverages Solana's speed to ensure that every in-game action has an on-chain reflection.
 
-| Category | Feature | Technical Implementation |
+| Category | Feature | Description |
 | :--- | :--- | :--- |
-| **Tokens** | **Everything is an SPL Token** | Every block type (Dirt, Wood, Gold) maps to a specific SPL-Token Mint on Solana. |
-| **Trade** | **dBlocks (Vending)** | Decentralized blocks where players store items and set prices. Interacting opens a React-Overlay to finalize the swap via Solana. |
-| **Finance** | **Liquidity Pools (DEX)** | Physical DEX blocks on the island allow players to swap resource-tokens using a Jupiter-inspired UI. |
-| **Identity** | **NFT Skins** | Backend verifies NFT ownership (e.g., Mad Lads). Lua scripts apply textures: `player:set_properties({textures={"madlad.png"}})` |
-| **Access** | **NFT Keycards** | Steel doors that only open if the player's wallet contains a specific NFT "Keycard." |
-| **Ad Space** | **Token-Gated Billboards** | In-game canvases that render external IPFS images. Ad space is rented using USDC or Solanium Coins. |
+| **Tokens** | **SPL Token Assets** | Every block type (Dirt, Wood, Gold) corresponds to a specific SPL-Token Mint on the Solana Blockchain. |
+| **Trade** | **dBlocks** | Decentralized blocks where players store items and set prices. Interacting with a dBlock opens a UI overlay to finalize the swap via the player's wallet. |
+| **Finance** | **External Liquidity** | While not physically in the game, the economy is driven by external Liquidity Pools, allowing resource tokens to be traded for USDC or SOL. |
+| **Identity** | **NFT Skins** | The backend verifies NFT ownership (e.g., Mad Lads). Lua scripts apply custom textures based on the wallet's contents. |
+| **Access** | **NFT Keycards** | Specialized steel doors that only unlock if the player possesses a specific NFT "Keycard" in their managed wallet. |
+| **Ad Space** | **Token-Gated Billboards** | Large in-game canvases that render external images. Players pay Solanium Coins to display custom IPFS-linked artwork. |
 
 ---
 
 ## 4. Project Structure
 
-The SolCraft Monorepo is organized to separate concerns while maintaining tight integration.
+The SolCraft Monorepo is organized to separate game logic, networking, and blockchain interaction.
 
 ```text
 📁 solcraft-monorepo
- ┣ 📁 web           # Next.js Frontend: UI, Wallet Adapter, and WASM Runtime
- ┣ 📁 backend       # Node.js Express API: Middleware between Game and Blockchain
- ┣ 📁 game-server   # Luanti Engine binary and configuration
+ ┣ 📁 web           # Next.js Frontend: UI, Managed Wallet Interface, and WASM Engine
+ ┣ 📁 backend       # Node.js API Gateway: Handles Webhooks, SQL, and Solana Transactions
+ ┣ 📁 game-server   # Luanti Engine (Server-side)
  ┃ ┗ 📁 mods
- ┃   ┗ 📁 web3_bridge  # The "Brain": Lua scripts for real-time inventory syncing
+ ┃   ┣ 📁 solanium     # The Solanium economy logic
+ ┃   ┣ 📁 defi         # Logic for dBlocks, Billboards, and NFT Access
+ ┃   ┗ 📁 environment  # Item banning and infinite world settings
  ┣ 📄 README.md     # Project documentation
- ┗ 📄 .gitignore    # Optimization for clean version control
+ ┗ 📄 .gitignore    # Optimized for Voxel/Web3 projects
 ```
 
 ---
 
 ## 5. Deployment & Infrastructure
 
-SolCraft is designed for low-latency performance and high availability.
-
-- **Frontend Hosting:** [Vercel](https://vercel.com)
-  - Next.js 14+ is deployed here, serving the WebAssembly game engine and the React UI.
-  - Custom Domain: `https://solcraft.me`
-- **Backend & Game Engine:** [Hetzner Cloud](https://hetzner.com)
-  - A high-performance Ubuntu instance hosts the Luanti Game Server and the Node.js API Gateway.
-  - Connectivity is maintained via a WebSocket proxy to allow browser-based clients to communicate with the native UDP game port.
-- **Database:** [Supabase](https://supabase.com)
-  - Used for fast, real-time synchronization of player metadata and non-critical game states.
+- **Frontend:** Hosted on **Vercel** (`https://solcraft.me`).
+- **Game Server & Backend:** Hosted on a dedicated **Hetzner Cloud** instance. 
+- **Networking:** Utilizes a custom WebSocket Proxy to bridge browser-based clients with the native Luanti UDP protocol.
+- **Database:** **Supabase (SQL)** is used for real-time player metadata and transaction logging.
+- **Wallet Management:** For the Hackathon demo, private keys are securely managed by the backend to ensure a "zero-friction" user experience without constant wallet pop-ups.
 
 ---
 
-## 6. The "Solanium" Economy
+## 6. The Solanium Cycle
 
-A unique element of SolCraft is the discovery of **Solanium**. 
-1. **Mining:** Players find rare Solanium Ore deep beneath the island.
-2. **Refining:** The ore must be manually smelted in a furnace (30-second duration).
-3. **Minting:** The resulting Solanium Lump can be pressed into a **Solanium Coin**.
-This coin serves as the baseline for all in-game trade, bridging the gap between raw labor and digital wealth.
+Solanium is the heart of the Frontier’s trade.
+1. **Mining:** Players discover rare Solanium Ore deep underground.
+2. **Processing:** The ore is smelted into a **Solanium Lump** (a slow, high-value process).
+3. **Minting:** The lump is pressed into a **Solanium Coin**, which serves as the primary currency for all in-game trade and billboard rentals.
 
 ---
+
+*SolCraft is an open-source experiment in digital sovereignty. Built for the Frontier.*
