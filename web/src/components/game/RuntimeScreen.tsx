@@ -66,6 +66,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
   const [isPaused, setIsPaused] = useState(false);
   const [displayProgress, setDisplayProgress] = useState(0);
 
+  // Prevents double-load in React 18 Strict Mode
   const scriptLoadedRef = useRef(false);
 
   // --- PAUSE MENU STATE ---
@@ -105,8 +106,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
       setSelectedAsset(null);
     }
   }, [isPaused, fetchAssets]);
-
-
 
   const fixGeometry = useCallback(() => {
     if (!canvasRef.current || !canvasContainerRef.current) return;
@@ -275,6 +274,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     const onResize = () => fixGeometry();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -296,32 +296,24 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
         (window as any).__game_exited_pointer = false;
       }, 100);
     };
-
     const onKey = (e: KeyboardEvent) => {
-      // 🔥 ESC FIX: Menü öffnen ohne das Spiel zu beeinflussen
-      if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        e.preventDefault();
-        document.exitPointerLock();
-      }
+      if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) e.stopPropagation();
     };
-
     window.addEventListener('keydown', onKey, true);
-
     const onLockChange = () => {
       if (document.pointerLockElement === canvasRef.current) {
         setIsConnecting(false);
         setIsPaused(false);
-        canvasRef.current?.focus();
       } else {
         if (isConnecting) return;
-        setIsPaused(true);
-        canvasRef.current?.blur();
+        if ((window as any).__game_exited_pointer) {
+          (window as any).__game_exited_pointer = false;
+        } else {
+          setIsPaused(true);
+        }
       }
     };
     document.addEventListener('pointerlockchange', onLockChange);
-
     return () => {
       document.exitPointerLock = origExit;
       window.removeEventListener('keydown', onKey, true);
@@ -411,11 +403,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
       )}
 
       {isPaused && !isConnecting && (
-        <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12"
-          onKeyDown={(e) => e.stopPropagation()}
-          onKeyUp={(e) => e.stopPropagation()}
-        >
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -447,10 +435,8 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                       <motion.div
                         key={idx}
                         drag
-                        dragSnapToOrigin={true}
-                        dragElastic={0.05}
-                        dragTransition={{ bounceStiffness: 800, bounceDamping: 20 }}
-                        whileDrag={{ scale: 1.1, zIndex: 50, cursor: "grabbing" }}
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
                         onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'item', data: item })}
                         className="bg-white border border-border rounded-3xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm cursor-grab active:cursor-grabbing h-48 relative"
                       >
@@ -458,9 +444,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                           x{item.amount}
                         </div>
                         <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-20 h-20 object-contain drop-shadow-sm" />
-                        <span className="font-bold text-lg text-foreground text-center break-all capitalize">
-                          {item.name.includes(':') ? item.name.split(':')[1] : item.name}
-                        </span>
+                        <span className="font-bold text-lg text-foreground text-center break-all">{item.name}</span>
                       </motion.div>
                     ))
                   ) : (
@@ -468,10 +452,8 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                       <motion.div
                         key={idx}
                         drag
-                        dragSnapToOrigin={true}
-                        dragElastic={0.05}
-                        dragTransition={{ bounceStiffness: 800, bounceDamping: 20 }}
-                        whileDrag={{ scale: 1.1, zIndex: 50, cursor: "grabbing" }}
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
                         onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'nft', data: nft })}
                         className="bg-secondary/50 border border-border rounded-3xl flex items-center justify-center shadow-sm cursor-grab active:cursor-grabbing h-48 overflow-hidden relative group"
                       >
@@ -509,7 +491,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                             <div className="bg-white p-2 rounded-xl shadow-sm border border-border">
                               <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${selectedAsset.data.name}`} className="w-16 h-16" />
                             </div>
-                            <div className="font-bold text-xl capitalize">{selectedAsset.data.name.includes(':') ? selectedAsset.data.name.split(':')[1] : selectedAsset.data.name}</div>
+                            <div className="font-bold text-xl">{selectedAsset.data.name}</div>
                           </>
                         ) : (
                           <>
@@ -534,7 +516,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                       <div className="flex gap-4 mt-4">
                         <button onClick={() => setShowSendModal(false)} className="flex-1 py-4 bg-secondary border border-border rounded-xl font-bold text-foreground hover:bg-border transition-all">Cancel</button>
                         <button onClick={executeSend} disabled={isSending || !sendAddress} className="flex-1 py-4 bg-white border border-border shadow-sm text-foreground rounded-xl font-bold hover:bg-secondary transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                          {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send"}
+                          {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Items"}
                         </button>
                       </div>
                     </div>
