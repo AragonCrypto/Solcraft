@@ -106,24 +106,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     }
   }, [isPaused, fetchAssets]);
 
-  // 🔥 FIX FÜR DAS TIPPEN: Blockiert alle Tasten für das Spiel, wenn das Menü offen ist
-  useEffect(() => {
-    const blockGameInput = (e: KeyboardEvent) => {
-      if (isPaused) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-      }
-    };
 
-    // capture: true sorgt dafür, dass React die Taste VOR dem Canvas abfängt!
-    window.addEventListener('keydown', blockGameInput, true);
-    window.addEventListener('keyup', blockGameInput, true);
-
-    return () => {
-      window.removeEventListener('keydown', blockGameInput, true);
-      window.removeEventListener('keyup', blockGameInput, true);
-    };
-  }, [isPaused]);
 
   const fixGeometry = useCallback(() => {
     if (!canvasRef.current || !canvasContainerRef.current) return;
