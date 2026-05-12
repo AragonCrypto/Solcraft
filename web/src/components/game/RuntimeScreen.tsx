@@ -18,6 +18,7 @@ export interface GameOptionsLocal {
   gameId: string;
   playerName?: string;
   password?: string;
+  phantomWallet?: string;
 }
 
 interface RuntimeScreenProps {
@@ -52,248 +53,59 @@ declare global {
   }
 }
 
-function PauseMenu({ playerName, onResume, onDisconnect }: { playerName: string, onResume: () => void, onDisconnect: () => void }) {
-  const [inventory, setInventory] = useState<any[]>([]);
-  const [nfts, setNfts] = useState<any[]>([]);
-  const [stagedItem, setStagedItem] = useState<any | null>(null);
-  const [targetWallet, setTargetWallet] = useState("");
-  const [sendAmount, setSendAmount] = useState(1);
-  const [isSending, setIsSending] = useState(false);
-  const dropZoneRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!playerName) return;
-    fetch(`${BACKEND_URL}/api/inventory-by-name/${playerName}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const invArray = Object.entries(data.inventory || {})
-            .map(([key, val]) => ({ type: 'item', id: key, name: key, amount: val }))
-            .filter(item => (item.amount as number) > 0);
-          setInventory(invArray);
-
-          if (data.wallet) {
-            fetch(`${BACKEND_URL}/api/nfts/${data.wallet}`)
-              .then(r => r.json())
-              .then(nftData => {
-                if (nftData.success && nftData.nfts) {
-                  const nftArr = nftData.nfts.map((n: any) => ({ type: 'nft', id: n.id, image: n.image, amount: 1 }));
-                  setNfts(nftArr);
-                }
-              })
-              .catch(console.error);
-          }
-        }
-      })
-      .catch(console.error);
-  }, [playerName]);
-
-  const items = [...nfts, ...inventory];
-
-  const handleDragEnd = (event: any, info: any, item: any) => {
-    if (!dropZoneRef.current) return;
-    const rect = dropZoneRef.current.getBoundingClientRect();
-    if (
-      info.point.x >= rect.left &&
-      info.point.x <= rect.right &&
-      info.point.y >= rect.top &&
-      info.point.y <= rect.bottom
-    ) {
-      setStagedItem(item);
-      setSendAmount(1);
-    }
-  };
-
-  const handleSend = async () => {
-    setIsSending(true);
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/transfer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_name: playerName,
-          target_wallet: targetWallet,
-          item_type: stagedItem.type,
-          item_id: stagedItem.id,
-          amount: stagedItem.type === 'item' ? sendAmount : 1
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        if (stagedItem.type === 'item') {
-          setInventory(inv => inv.map(i => i.id === stagedItem.id ? { ...i, amount: i.amount - sendAmount } : i).filter(i => i.amount > 0));
-        } else {
-          setNfts(n => n.filter(i => i.id !== stagedItem.id));
-        }
-        setStagedItem(null);
-        setTargetWallet("");
-      } else {
-        alert("Error: " + data.error);
-      }
-    } catch (err) {
-      alert("Error sending");
-    }
-    setIsSending(false);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[9999] bg-black/40 backdrop-blur-md flex items-center justify-center p-8 pointer-events-auto"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-white/95 border border-border p-8 rounded-3xl shadow-2xl w-full max-w-7xl flex gap-10 h-[85vh] relative overflow-hidden text-foreground"
-      >
-        <div className="flex-1 flex flex-col gap-6 border-r border-border pr-10 overflow-hidden">
-          <h2 className="text-3xl font-heading font-bold">Web3 Inventory</h2>
-
-          <div className="flex-1 overflow-y-auto pr-4 grid grid-cols-3 md:grid-cols-4 gap-4 auto-rows-max custom-scrollbar pb-4 relative">
-            {items.length === 0 ? (
-              <div className="col-span-full flex items-center justify-center h-40 text-muted-foreground font-medium">
-                Your inventory is empty.
-              </div>
-            ) : items.map(item => (
-              <motion.div
-                key={item.type + item.id}
-                drag
-                dragSnapToOrigin
-                onDragEnd={(e, info) => handleDragEnd(e, info, item)}
-                whileHover={{ scale: 1.05 }}
-                whileDrag={{ scale: 1.1, zIndex: 50, rotate: 4 }}
-                className="relative bg-secondary/30 border border-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 cursor-grab active:cursor-grabbing hover:bg-secondary/50 transition-colors aspect-square shadow-sm"
-              >
-                {item.type === 'nft' ? (
-                  <img src={item.image} alt="NFT" className="w-full h-full object-contain drop-shadow-md rounded-xl pointer-events-none" />
-                ) : (
-                  <>
-                    <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-16 h-16 object-contain pointer-events-none" />
-                    <span className="font-bold text-center line-clamp-1 w-full text-sm mt-1 pointer-events-none">{item.name}</span>
-                    <span className="absolute top-2 right-2 bg-white border border-border px-2 py-0.5 rounded-full text-xs font-bold shadow-sm pointer-events-none">
-                      x{item.amount}
-                    </span>
-                  </>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          <div
-            ref={dropZoneRef}
-            className={`h-64 rounded-3xl border-2 flex flex-col items-center justify-center p-6 transition-all relative overflow-hidden shrink-0
-              ${stagedItem ? 'border-foreground bg-secondary/30 border-solid' : 'border-border bg-secondary/10 hover:border-foreground/30 border-dashed'}`}
-          >
-            <AnimatePresence mode="wait">
-              {!stagedItem ? (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center text-muted-foreground pointer-events-none">
-                  <div className="w-12 h-12 mb-4 bg-white border border-border rounded-full flex items-center justify-center shadow-sm">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 19 19 12"></polyline></svg>
-                  </div>
-                  <span className="text-xl font-bold uppercase tracking-widest mb-1 text-foreground/70">Send</span>
-                  <span className="text-sm">Drag items or NFTs here</span>
-                </motion.div>
-              ) : (
-                <motion.div key="staged" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full h-full flex flex-col justify-between gap-4">
-                  <div className="flex items-center gap-4 border-b border-border pb-4">
-                    <div className="w-16 h-16 bg-white rounded-xl border border-border flex items-center justify-center p-2 shadow-sm shrink-0">
-                      {stagedItem.type === 'nft' ? (
-                        <img src={stagedItem.image} className="w-full h-full object-contain" />
-                      ) : (
-                        <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${stagedItem.name}`} className="w-full h-full object-contain" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold truncate">{stagedItem.type === 'nft' ? 'Selected NFT' : stagedItem.name}</h3>
-                      <button onClick={() => setStagedItem(null)} className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 mt-1 transition-colors">Cancel Selection</button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <input
-                      type="text"
-                      placeholder="Target Solana Wallet (or recipient)"
-                      value={targetWallet}
-                      onChange={e => setTargetWallet(e.target.value)}
-                      className="w-full bg-white border border-border px-4 py-3 rounded-xl focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all"
-                    />
-                    <div className="flex gap-3">
-                      {stagedItem.type === 'item' && (
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">Amt:</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max={stagedItem.amount}
-                            value={sendAmount}
-                            onChange={e => setSendAmount(Number(e.target.value))}
-                            className="w-32 bg-white border border-border pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all"
-                          />
-                        </div>
-                      )}
-                      <button
-                        onClick={handleSend}
-                        disabled={!targetWallet || isSending}
-                        className="flex-1 bg-foreground text-background font-bold py-3 rounded-xl hover:bg-foreground/90 disabled:opacity-50 transition-colors shadow-md flex items-center justify-center gap-2"
-                      >
-                        {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>}
-                        <span>{isSending ? 'Sending...' : `Send ${stagedItem.type === 'item' ? 'Items' : 'NFT'}`}</span>
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <div className="w-80 flex flex-col gap-4 py-4 shrink-0">
-          <div className="mb-auto">
-            <h2 className="text-4xl font-heading font-bold tracking-tight mb-2">Paused</h2>
-            <p className="text-muted-foreground">Take a break.</p>
-          </div>
-
-          <button
-            onClick={onResume}
-            className="w-full py-5 px-6 bg-white border-2 border-foreground font-bold rounded-2xl hover:bg-foreground hover:text-background transition-all text-xl shadow-sm"
-          >
-            Continue
-          </button>
-
-          <button
-            className="w-full py-4 px-6 bg-white border border-border font-bold rounded-2xl hover:bg-secondary transition-all"
-          >
-            Settings
-          </button>
-
-          <button
-            onClick={onDisconnect}
-            className="w-full py-4 px-6 mt-8 bg-white border border-border font-bold rounded-2xl hover:bg-secondary transition-all"
-          >
-            Quit Game
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: RuntimeScreenProps) {
-  const canvasRef = useRef(null);
-  const canvasContainerRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const storageManager = useStorageManager();
   const prefetchData = usePrefetchData();
   const minetestConsole = useMinetestConsole();
+
   const [isLoading, setIsLoading] = useState(true);
   const [packManager] = useState(() => new PackManager(minetestConsole));
   const [isConnecting, setIsConnecting] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [displayProgress, setDisplayProgress] = useState(0);
 
+  // Prevents double-load in React 18 Strict Mode
   const scriptLoadedRef = useRef(false);
+
+  // --- PAUSE MENU STATE ---
+  const [activeTab, setActiveTab] = useState<'Items' | 'NFTs'>('Items');
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [nfts, setNfts] = useState<any[]>([]);
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendAddress, setSendAddress] = useState('');
+  const [sendAmount, setSendAmount] = useState(1);
+  const [isSending, setIsSending] = useState(false);
+
+  const fetchAssets = useCallback(async () => {
+    if (!gameOptions.phantomWallet) return;
+    try {
+      const invRes = await fetch(`${BACKEND_URL}/api/inventory/${gameOptions.phantomWallet}`);
+      const invData = await invRes.json();
+      if (invData.success && invData.data.web3_inventory) {
+        const invArray = Object.entries(invData.data.web3_inventory)
+          .map(([name, amount]) => ({ name, amount }))
+          .filter(i => (i.amount as number) > 0);
+        setInventory(invArray);
+      }
+      const nftRes = await fetch(`${BACKEND_URL}/api/nfts/${gameOptions.phantomWallet}`);
+      const nftData = await nftRes.json();
+      if (nftData.success && nftData.nfts) {
+        setNfts(nftData.nfts);
+      }
+    } catch (e) { console.error("Failed to fetch assets", e); }
+  }, [gameOptions.phantomWallet]);
+
+  useEffect(() => {
+    if (isPaused) {
+      fetchAssets();
+    } else {
+      setShowSendModal(false);
+      setSelectedAsset(null);
+    }
+  }, [isPaused, fetchAssets]);
 
   const fixGeometry = useCallback(() => {
     if (!canvasRef.current || !canvasContainerRef.current) return;
@@ -316,7 +128,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     try {
       if (!storageManager) throw new Error('StorageManager missing');
       if (!(await storageManager.isInitialized)) {
-        await storageManager.initialize({ policy: gameOptions.storagePolicy }, minetestConsole);
+        await storageManager.initialize({ policy: gameOptions.storagePolicy as any }, minetestConsole);
       }
       if (zipLoaderPromise) {
         await storageManager.restoreFromZip(await zipLoaderPromise);
@@ -419,7 +231,6 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     scriptLoadedRef.current = true;
 
     const canvas = canvasRef.current;
-
     const workerInject = `
       Module['print'] = (text) => {
         postMessage({cmd:'callHandler',handler:'print',args:[text],threadId:Module['_pthread_self']()});
@@ -443,7 +254,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
       monitorRunDependencies: (left: number) => {
         const deps = Math.max(window.Module.totalDependencies, left);
         window.Module.totalDependencies = deps;
-        const pct = deps > 0 ? (deps - left) / deps * 100 : 0;
+        const pct = deps > 0 ? ((deps - left) / deps) * 100 : 0;
         window.dispatchEvent(new CustomEvent('minetest-progress', { detail: pct }));
       },
       setStatus: (_: string) => { },
@@ -463,6 +274,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     const onResize = () => fixGeometry();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -480,7 +292,9 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     document.exitPointerLock = function () {
       (window as any).__game_exited_pointer = true;
       origExit();
-      setTimeout(() => { (window as any).__game_exited_pointer = false; }, 100);
+      setTimeout(() => {
+        (window as any).__game_exited_pointer = false;
+      }, 100);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Escape' && document.pointerLockElement === canvasRef.current) e.stopPropagation();
@@ -523,35 +337,221 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
     canvasRef.current?.requestPointerLock();
   };
 
+  const handleDragEnd = (event: any, info: any, asset: any) => {
+    const dropZone = document.getElementById("send-drop-zone");
+    if (dropZone) {
+      const rect = dropZone.getBoundingClientRect();
+      if (info.point.x >= rect.left && info.point.x <= rect.right &&
+        info.point.y >= rect.top && info.point.y <= rect.bottom) {
+        setSelectedAsset(asset);
+        setSendAmount(1);
+        setSendAddress('');
+        setShowSendModal(true);
+      }
+    }
+  };
+
+  const executeSend = async () => {
+    if (!sendAddress) return;
+    setIsSending(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_wallet: gameOptions.phantomWallet,
+          to_wallet: sendAddress,
+          asset_type: selectedAsset.type,
+          asset_data: selectedAsset.data,
+          amount: selectedAsset.type === 'item' ? sendAmount : 1
+        })
+      });
+      const d = await res.json();
+      if (d.success) {
+        setShowSendModal(false);
+        setSelectedAsset(null);
+        await fetchAssets();
+      } else {
+        alert("Transfer failed: " + d.error);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Transfer error");
+    }
+    setIsSending(false);
+  };
+
   return (
-    <>
+    <div className="absolute inset-0 bg-background flex flex-col items-center justify-center font-sans z-50">
+
       {isConnecting && (
-        <div className="absolute inset-0 z-50 bg-background flex flex-col items-center justify-center p-8">
-          <h1 className="text-4xl font-heading font-bold mb-4">
+        <div className="absolute inset-0 z-50 bg-background flex flex-col items-center justify-center gap-6">
+          <Loader2 className="w-16 h-16 animate-spin text-foreground" />
+          <h2 className="text-3xl font-bold font-heading">
             {isLoading ? 'Booting WebAssembly Engine...' : 'Connecting to Solcraft...'}
-          </h1>
-          <p className="text-muted-foreground mb-8">Securing connection and loading world data</p>
+          </h2>
+          <p className="text-muted-foreground">Securing connection and loading world data</p>
           {isLoading && (
-            <div className="w-64 h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-75" style={{ width: `${displayProgress}%` }} />
+            <div className="w-64 h-2 bg-secondary rounded-full overflow-hidden mt-4 border border-border">
+              <div
+                className="h-full bg-foreground transition-all duration-75"
+                style={{ width: `${displayProgress}%` }}
+              />
             </div>
           )}
         </div>
       )}
 
-      <AnimatePresence>
-        {isPaused && !isConnecting && (
-          <PauseMenu
-            playerName={gameOptions.minetestArgs?.name || gameOptions.playerName || ''}
-            onResume={handleResume}
-            onDisconnect={() => window.location.reload()}
-          />
-        )}
-      </AnimatePresence>
+      {isPaused && !isConnecting && (
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4 md:p-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white/90 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl w-full max-w-6xl h-full max-h-[800px] flex overflow-hidden relative"
+          >
+            {/* LEFT SECTION: WEB3 DASHBOARD */}
+            <div className="flex-1 flex flex-col border-r border-border bg-secondary/20 relative">
+              {/* Tabs */}
+              <div className="flex gap-8 p-6 border-b border-border bg-white/50 items-center">
+                <button
+                  onClick={() => setActiveTab('Items')}
+                  className={`text-2xl font-bold font-heading transition-colors ${activeTab === 'Items' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Web3 Items
+                </button>
+                <button
+                  onClick={() => setActiveTab('NFTs')}
+                  className={`text-2xl font-bold font-heading transition-colors ${activeTab === 'NFTs' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  NFTs
+                </button>
+              </div>
 
-      <div ref={canvasContainerRef} style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-        <canvas ref={canvasRef} id="canvas" className="emscripten" onContextMenu={e => e.preventDefault()} tabIndex={-1} />
+              {/* Grid */}
+              <div className="flex-1 overflow-y-auto p-6 relative">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-32">
+                  {activeTab === 'Items' ? (
+                    inventory.map((item: any, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        drag
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
+                        onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'item', data: item })}
+                        className="bg-white border border-border rounded-3xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm cursor-grab active:cursor-grabbing h-48 relative"
+                      >
+                        <div className="absolute top-4 right-4 bg-secondary text-foreground px-3 py-1 rounded-lg text-sm font-bold border border-border">
+                          x{item.amount}
+                        </div>
+                        <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-20 h-20 object-contain drop-shadow-sm" />
+                        <span className="font-bold text-lg text-foreground text-center break-all">{item.name}</span>
+                      </motion.div>
+                    ))
+                  ) : (
+                    nfts.map((nft: any, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        drag
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 1.05, zIndex: 50, rotate: 2 }}
+                        onDragEnd={(e, info) => handleDragEnd(e, info, { type: 'nft', data: nft })}
+                        className="bg-secondary/50 border border-border rounded-3xl flex items-center justify-center shadow-sm cursor-grab active:cursor-grabbing h-48 overflow-hidden relative group"
+                      >
+                        <img src={nft.image} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                      </motion.div>
+                    ))
+                  )}
+
+                  {(activeTab === 'Items' && inventory.length === 0) || (activeTab === 'NFTs' && nfts.length === 0) ? (
+                    <div className="col-span-full text-center text-muted-foreground mt-12 text-lg font-medium">
+                      Inventory is empty.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Drop Zone */}
+              <div id="send-drop-zone" className="absolute bottom-0 left-0 w-full h-32 bg-white/80 backdrop-blur-md border-t border-border flex flex-col items-center justify-center transition-colors shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                <p className="text-muted-foreground font-bold font-heading text-xl tracking-widest uppercase">⬇ Drag here to Send ⬇</p>
+              </div>
+
+              {/* Send Modal Overlay */}
+              <AnimatePresence>
+                {showSendModal && selectedAsset && (
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-white/90 backdrop-blur-md z-50 flex items-center justify-center p-8"
+                  >
+                    <div className="bg-white border border-border rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col gap-6">
+                      <h3 className="text-3xl font-heading font-bold text-foreground">Send {selectedAsset.type === 'item' ? 'Item' : 'NFT'}</h3>
+
+                      <div className="flex items-center gap-6 p-4 bg-secondary/30 border border-border rounded-2xl">
+                        {selectedAsset.type === 'item' ? (
+                          <>
+                            <div className="bg-white p-2 rounded-xl shadow-sm border border-border">
+                              <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${selectedAsset.data.name}`} className="w-16 h-16" />
+                            </div>
+                            <div className="font-bold text-xl">{selectedAsset.data.name}</div>
+                          </>
+                        ) : (
+                          <>
+                            <img src={selectedAsset.data.image} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
+                            <div className="font-bold text-xl">Selected NFT</div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">To Solana Wallet</label>
+                        <input type="text" className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none focus:border-foreground transition-colors" placeholder="Solana Address..." value={sendAddress} onChange={e => setSendAddress(e.target.value)} />
+                      </div>
+
+                      {selectedAsset.type === 'item' && (
+                        <div className="flex flex-col gap-3">
+                          <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Amount (Max: {selectedAsset.data.amount})</label>
+                          <input type="number" min="1" max={selectedAsset.data.amount} className="p-4 bg-secondary border border-border rounded-xl text-foreground font-mono outline-none focus:border-foreground transition-colors" value={sendAmount} onChange={e => setSendAmount(Number(e.target.value))} />
+                        </div>
+                      )}
+
+                      <div className="flex gap-4 mt-4">
+                        <button onClick={() => setShowSendModal(false)} className="flex-1 py-4 bg-secondary border border-border rounded-xl font-bold text-foreground hover:bg-border transition-all">Cancel</button>
+                        <button onClick={executeSend} disabled={isSending || !sendAddress} className="flex-1 py-4 bg-white border border-border shadow-sm text-foreground rounded-xl font-bold hover:bg-secondary transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                          {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Items"}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* RIGHT SECTION: GAME MENU */}
+            <div className="w-80 p-8 flex flex-col gap-4 bg-white/50 border-l border-border relative z-10">
+              <h2 className="text-4xl font-heading font-bold mb-8 text-foreground drop-shadow-sm">Paused</h2>
+
+              <button onClick={handleResume} className="py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all flex items-center justify-center gap-2">Continue</button>
+              <button className="py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all flex items-center justify-center gap-2">Settings</button>
+
+              <div className="mt-auto">
+                <button onClick={() => window.location.reload()} className="w-full py-5 bg-white border border-border shadow-sm text-foreground text-xl font-bold rounded-2xl hover:bg-secondary transition-all flex items-center justify-center gap-2">Quit Game</button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      <div
+        ref={canvasContainerRef}
+        style={{ width: '100vw', height: '100vh', overflow: 'hidden', visibility: isConnecting ? 'hidden' : 'visible' }}
+      >
+        <canvas
+          ref={canvasRef}
+          id="canvas"
+          className="emscripten"
+          onContextMenu={e => e.preventDefault()}
+          tabIndex={-1}
+        />
       </div>
-    </>
+    </div>
   );
 }

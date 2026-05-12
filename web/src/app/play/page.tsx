@@ -13,13 +13,11 @@ import GlobalProvider, { useExecutePrefetch, usePrefetchData } from "@/lib/minet
 import { GameOptionsLocal } from "@/components/game/RuntimeScreen";
 import MinetestArgs from "@/lib/minetest/MinetestArgs";
 
-// 🚀 MIXED CONTENT FIX: Wir nutzen die HTTPS Domain!
 const BACKEND_URL = "https://api.solcraft.me";
 
 type PlayState = "connect" | "checking" | "setup" | "dashboard" | "playing";
 
 function PlayPageContent() {
-  // 🔥 FIX: Wir nutzen jetzt signMessage statt sendTransaction!
   const { connected, publicKey, signMessage } = useWallet();
   const { connection } = useConnection();
   const executePrefetch = useExecutePrefetch();
@@ -34,11 +32,8 @@ function PlayPageContent() {
   const [displayProgress, setDisplayProgress] = useState(0);
   const isReady = prefetchData.status.base === 'done' && prefetchData.status.voxelibre === 'done';
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  // 1. EXISTIERENDEN SPIELER CHECKEN
   useEffect(() => {
     if (connected && publicKey) {
       executePrefetch('mineclone2');
@@ -60,7 +55,6 @@ function PlayPageContent() {
         })
         .catch(err => {
           console.error("Backend-Verbindungsfehler:", err);
-          // Zeige Setup an, wenn API failt (für Hackathon-Demozwecke)
           setPlayState("setup");
         });
     } else {
@@ -68,7 +62,6 @@ function PlayPageContent() {
     }
   }, [connected, publicKey, executePrefetch]);
 
-  // Download-Fortschrittsbalken
   useEffect(() => {
     const baseStatus = prefetchData.status.base === 'done' ? 1 : (typeof prefetchData.status.base === 'number' ? prefetchData.status.base : 0);
     const voxelStatus = prefetchData.status.voxelibre === 'done' ? 1 : (typeof prefetchData.status.voxelibre === 'number' ? prefetchData.status.voxelibre : 0);
@@ -81,26 +74,19 @@ function PlayPageContent() {
     });
   }, [prefetchData]);
 
-  // 2. NEUEN SPIELER MINTEN (NUR NOCH SIGNIEREN, KEINE GEBÜHREN MEHR!)
   const handleMint = async (name: string, mode: "Liquid" | "Manual") => {
     try {
       if (!publicKey) throw new Error("Wallet not connected");
       if (!signMessage) throw new Error("Dein Wallet unterstützt keine Signatur-Funktion.");
 
       console.log(`Fordere Signatur für die Registrierung an...`);
-
-      // 🔥 FIX: Wir erstellen eine einfache Textnachricht, Phantom zeigt hier keine Warnung an!
       const message = new TextEncoder().encode(
         `Willkommen bei Solcraft!\n\nBitte signiere diese Nachricht, um deinen Charakter "${name}" zu erstellen.\n\nEs fallen hierfür KEINE Gebühren an.`
       );
 
-      // Wallet öffnet sich: User muss nur auf "Approve/Sign" klicken.
       const signatureBytes = await signMessage(message);
-
-      // Signatur in Base64 umwandeln, um sie an das Backend weiterzugeben
       const signature = Buffer.from(signatureBytes).toString("base64");
 
-      // 3. BACKEND INFORMIEREN UND CUSTODIAL WALLET HOLEN
       const res = await fetch(`${BACKEND_URL}/api/player/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +94,7 @@ function PlayPageContent() {
           player_name: name,
           phantom_wallet: publicKey.toBase58(),
           game_mode: mode.toUpperCase(),
-          tx_signature: signature // Wir senden jetzt die sichere Text-Signatur!
+          tx_signature: signature
         })
       });
 
@@ -136,9 +122,7 @@ function PlayPageContent() {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
-    } catch (e) {
-      console.warn("Fullscreen request failed", e);
-    }
+    } catch (e) { console.warn("Fullscreen request failed", e); }
 
     if (isReady && publicKey) {
       const options: GameOptionsLocal = {
@@ -147,12 +131,13 @@ function PlayPageContent() {
         storagePolicy: 'indexeddb',
         minetestArgs: new MinetestArgs(),
         mode: 'local',
-        gameId: 'mineclone2'
+        gameId: 'mineclone2',
+        phantomWallet: publicKey.toBase58() // HIER WIRD ES REINGEGEBEN
       };
 
       options.minetestArgs.go = true;
       options.minetestArgs.gameid = 'mineclone2';
-      options.minetestArgs.address = '116.203.126.146'; // Game-Server IP
+      options.minetestArgs.address = '116.203.126.146';
       options.minetestArgs.port = 30000;
       options.minetestArgs.name = playerName;
       options.minetestArgs.password = 'Solcraft123';
@@ -166,28 +151,22 @@ function PlayPageContent() {
     return (
       <RuntimeScreen
         gameOptions={gameOptions}
-        onGameStatus={(status) => {
-          if (status === 'failed') setPlayState("dashboard");
-        }}
+        onGameStatus={(status) => { if (status === 'failed') setPlayState("dashboard"); }}
         zipLoaderPromise={null}
       />
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 w-full min-h-screen">
-      <div className="absolute top-0 left-0 p-6 md:p-12 z-20">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-heading font-bold text-sm uppercase tracking-widest bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-border"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Home
-        </Link>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+      <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-bold">Back to Home</span>
+      </Link>
 
       {playState === "connect" && (
         <div className="bg-white/80 backdrop-blur-xl border border-border p-12 rounded-3xl shadow-xl flex flex-col items-center text-center max-w-md w-full">
-          <Wallet className="w-16 h-16 text-primary mb-6" />
+          <Wallet className="w-16 h-16 text-foreground mb-6" />
           <h2 className="text-3xl font-heading font-bold mb-4">Connect Wallet</h2>
           <p className="text-muted-foreground mb-8">
             Connect your Phantom wallet to authenticate and enter Solcraft.
@@ -200,7 +179,7 @@ function PlayPageContent() {
 
       {playState === "checking" && (
         <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <div className="w-12 h-12 border-4 border-foreground border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-lg font-bold">Synchronizing with Server...</p>
         </div>
       )}
@@ -225,9 +204,7 @@ function PlayPageContent() {
 
 export default function PlayPage() {
   return (
-    <main className="min-h-screen bg-background flex flex-col relative overflow-hidden text-foreground">
-      <div className="absolute inset-0 z-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-
+    <main>
       <GlobalProvider
         onExitDetected={() => window.location.reload()}
         onServerExitIntentDetected={() => { }}
