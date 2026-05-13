@@ -29,8 +29,8 @@ export function FooterCTA() {
           &copy; {new Date().getFullYear()} Solcraft. All rights reserved.
         </p>
         <div className="flex gap-8">
-          {["Twitter", "Discord", "Docs"].map((item) => (
-            <Link key={item} href="#" className="text-sm text-zinc-400 hover:text-zinc-900 transition-colors duration-200">
+          {["YouTube"].map((item) => (
+            <Link key={item} href="https://www.youtube.com/watch?v=5MJEbiEo1Qw" className="text-sm text-zinc-400 hover:text-zinc-900 transition-colors duration-200">
               {item}
             </Link>
           ))}

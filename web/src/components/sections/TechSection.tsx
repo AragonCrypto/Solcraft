@@ -11,7 +11,7 @@ export function TechSection() {
     { name: "Solana", abbr: "SOL", description: "Lightning-fast finality, sub-cent fees." },
     { name: "WebAssembly", abbr: "WASM", description: "Near-native C++ game engine in the browser." },
     { name: "React / Next.js", abbr: "JSX", description: "Seamless Web3 onboarding & wallet UX." },
-    { name: "Three.js", abbr: "3JS", description: "Custom voxel renderer at 60fps." },
+    { name: "Luanti", abbr: "LUA", description: "Modded Open-source Minecraft Clone." },
   ];
 
   return (

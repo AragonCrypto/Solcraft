@@ -24,16 +24,29 @@ export function PitchVideoSection() {
             Watch the Solcraft Pitch
           </h2>
 
-          <div className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl bg-muted border border-border">
-            <iframe
-              src="https://www.youtube.com/embed/5MJEbiEo1Qw?rel=0&showinfo=0&autohide=1"
-
-              title="Solcraft Pitch Video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute top-0 left-0 w-full h-full border-0"
+          <a
+            href="https://www.youtube.com/watch?v=5MJEbiEo1Qw"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl bg-muted border border-border group block"
+          >
+            <img
+              src="/assets/images/banner.png"
+              alt="Solcraft Pitch Video"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+              <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                <div className="w-0 h-0 border-t-[12px] border-t-transparent border-l-[22px] border-l-black border-b-[12px] border-b-transparent ml-2" />
+              </div>
+            </div>
+            
+            <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
+              <div className="bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-lg">
+                <p className="text-white text-sm font-bold tracking-wider uppercase">Watch on YouTube</p>
+              </div>
+            </div>
+          </a>
         </motion.div>
       </div>
     </section>

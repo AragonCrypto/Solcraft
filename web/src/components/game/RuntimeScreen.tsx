@@ -9,6 +9,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const BACKEND_URL = "https://api.solcraft.me";
 
+const formatItemName = (name: string) => {
+  if (!name) return "";
+  const baseName = name.includes(':') ? name.split(':')[1] : name;
+  return baseName
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export interface GameOptionsLocal {
   language: string;
   proxy: string;
@@ -444,7 +454,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                           x{item.amount}
                         </div>
                         <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`} className="w-20 h-20 object-contain drop-shadow-sm" />
-                        <span className="font-bold text-lg text-foreground text-center break-all">{item.name}</span>
+                        <span className="font-bold text-lg text-foreground text-center break-all">{formatItemName(item.name)}</span>
                       </motion.div>
                     ))
                   ) : (
@@ -491,7 +501,7 @@ export function RuntimeScreen({ gameOptions, onGameStatus, zipLoaderPromise }: R
                             <div className="bg-white p-2 rounded-xl shadow-sm border border-border">
                               <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${selectedAsset.data.name}`} className="w-16 h-16" />
                             </div>
-                            <div className="font-bold text-xl">{selectedAsset.data.name}</div>
+                            <div className="font-bold text-xl">{formatItemName(selectedAsset.data.name)}</div>
                           </>
                         ) : (
                           <>
