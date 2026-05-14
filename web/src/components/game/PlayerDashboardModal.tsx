@@ -13,10 +13,10 @@ const SkinViewer3D = ({ skinUrl, onLoaded }: { skinUrl: string; onLoaded: () => 
 
   useEffect(() => {
     let sv: any;
-    
+
     const initViewer = async () => {
       const { SkinViewer, WalkingAnimation } = await import("skinview3d");
-      
+
       if (!canvasRef.current) return;
 
       sv = new SkinViewer({
@@ -35,7 +35,7 @@ const SkinViewer3D = ({ skinUrl, onLoaded }: { skinUrl: string; onLoaded: () => 
       sv.controls.enableZoom = false;
       sv.autoRotate = true;
       sv.autoRotateSpeed = 0.5;
-      
+
       // Initial load
       await sv.loadSkin(skinUrl);
       onLoaded();
@@ -57,10 +57,10 @@ const SkinViewer3D = ({ skinUrl, onLoaded }: { skinUrl: string; onLoaded: () => 
 
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <canvas 
-        ref={canvasRef} 
-        className="cursor-grab active:cursor-grabbing transition-opacity duration-700" 
-        style={{ 
+      <canvas
+        ref={canvasRef}
+        className="cursor-grab active:cursor-grabbing transition-opacity duration-700"
+        style={{
           imageRendering: 'pixelated',
           width: '100%',
           height: '100%',
@@ -110,11 +110,11 @@ export function PlayerDashboardModal({
   const [skinLoaded, setSkinLoaded] = useState(false);
   const [sortBy, setSortBy] = useState<"amount" | "worth">("amount");
   const [isSortOpen, setIsSortOpen] = useState(false);
-  
+
   // Sell Interaction States
-  const [solBalance, setSolBalance] = useState(1.42);
+  const [solBalance, setSolBalance] = useState(0);
   const [sellingItemName, setSellingItemName] = useState<string | null>(null);
-  const [sellAmount, setSellAmount] = useState(1);
+  const [sellAmount, setSellAmount] = useState(0);
   const [hoveringWorthIndex, setHoveringWorthIndex] = useState<number | null>(null);
 
   // State für dynamische Daten aus dem Backend
@@ -257,10 +257,10 @@ export function PlayerDashboardModal({
             >
               Web3 Inventory
             </button>
-            
+
             <AnimatePresence>
               {activeTab === "Inventory" && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
@@ -295,13 +295,13 @@ export function PlayerDashboardModal({
                           exit={{ opacity: 0 }}
                           className="flex items-center gap-1"
                         >
-                          <button 
+                          <button
                             onClick={() => setSortBy("amount")}
                             className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${sortBy === "amount" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                           >
                             Quantity
                           </button>
-                          <button 
+                          <button
                             onClick={() => setSortBy("worth")}
                             className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${sortBy === "worth" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                           >
@@ -341,15 +341,15 @@ export function PlayerDashboardModal({
                   </button>
                   <div className="w-48 h-48 bg-secondary/30 rounded-3xl border border-border/50 p-4 flex items-center justify-center overflow-hidden shadow-inner relative group">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    
+
                     {!skinLoaded && (
                       <div className="absolute inset-0 animate-shimmer" />
                     )}
 
                     <div className={`relative z-10 w-full h-full transition-all duration-700 ${skinLoaded ? 'opacity-100 scale-105' : 'opacity-0 scale-95'}`}>
-                      <SkinViewer3D 
-                        skinUrl={nfts[skinIndex]?.image || ""} 
-                        onLoaded={() => setSkinLoaded(true)} 
+                      <SkinViewer3D
+                        skinUrl={nfts[skinIndex]?.image || ""}
+                        onLoaded={() => setSkinLoaded(true)}
                       />
                     </div>
                   </div>
@@ -360,14 +360,14 @@ export function PlayerDashboardModal({
                     <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </div>
-                
+
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">Equipped Skin</span>
                   </div>
-                  
-                  <motion.a 
-                    href="https://solscan.io" 
+
+                  <motion.a
+                    href="https://solscan.io"
                     target="_blank"
                     rel="noopener noreferrer"
                     whileHover="hover"
@@ -375,7 +375,7 @@ export function PlayerDashboardModal({
                     className="group relative bg-secondary/40 px-4 py-2.5 rounded-full border border-border flex items-center gap-3 transition-all duration-300 cursor-pointer overflow-hidden"
                   >
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">{nfts[skinIndex]?.name}</span>
-                    
+
                     <motion.div
                       variants={{
                         initial: { width: 0, opacity: 0 },
@@ -386,13 +386,13 @@ export function PlayerDashboardModal({
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                     </motion.div>
-                    
-                    <motion.div 
+
+                    <motion.div
                       variants={{
                         initial: { opacity: 0 },
                         hover: { opacity: 1 }
                       }}
-                      className="absolute inset-0 bg-foreground/[0.05] pointer-events-none transition-opacity" 
+                      className="absolute inset-0 bg-foreground/[0.05] pointer-events-none transition-opacity"
                     />
                   </motion.a>
                 </div>
@@ -433,9 +433,9 @@ export function PlayerDashboardModal({
                             {solBalance.toFixed(2)} SOL
                           </div>
                         </div>
-                        
+
                         <div className="w-px bg-primary/20 my-3" />
-                        
+
                         <div className="w-24 bg-primary/5 flex items-center justify-center p-2">
                           <div className="w-full h-full rounded-lg flex items-center justify-center bg-primary border border-primary shadow-sm text-white">
                             <span className="text-sm font-bold tracking-tight">
@@ -456,134 +456,141 @@ export function PlayerDashboardModal({
                           return parseFloat(b.worth) - parseFloat(a.worth);
                         })
                         .map((item, idx) => (
-                    <motion.div 
-                      layout
-                      key={item.name} 
-                      initial={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8, x: -50 }}
-                      className="flex items-stretch bg-secondary/30 border border-border rounded-xl overflow-hidden group shadow-sm h-16"
-                    >
-                      <div className="flex-1 flex items-center justify-between p-3 relative overflow-hidden h-full">
-                        <AnimatePresence mode="popLayout">
-                          {sellingItemName === item.name ? (
-                            <motion.div 
-                              key="sell-mode"
-                              initial={{ y: -50, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              exit={{ y: 50, opacity: 0 }}
-                              transition={{ type: "spring", damping: 15, stiffness: 250 }}
-                              className="absolute inset-0 flex items-center px-4 gap-4 bg-primary/5"
-                            >
-                              <div className="flex-1 relative h-6 flex items-center">
-                                <div className="absolute inset-0 bg-primary/10 rounded-full h-1.5 my-auto" />
-                                <motion.div 
-                                  className="absolute inset-y-0 left-0 bg-primary rounded-full h-1.5 my-auto"
-                                  style={{ width: `${(sellAmount / item.amount) * 100}%` }}
-                                />
-                                <input 
-                                  type="range"
-                                  min="0"
-                                  max={item.amount}
-                                  value={sellAmount}
-                                  onChange={(e) => setSellAmount(parseInt(e.target.value))}
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                />
-                                <motion.div 
-                                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none z-0"
-                                  animate={{ left: `${(sellAmount / item.amount) * 100}%` }}
-                                  style={{ marginLeft: '-8px' }}
-                                  transition={{ duration: 0 }}
-                                />
-                              </div>
-                              <span className="text-[10px] font-bold text-primary uppercase tracking-widest whitespace-nowrap">
-                                Sell {sellAmount}
-                              </span>
-                            </motion.div>
-                          ) : (
-                            <motion.div 
-                              key="normal-mode"
-                              initial={{ y: 0, opacity: 1 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              exit={{ y: 50, opacity: 0 }}
-                              transition={{ type: "spring", damping: 15, stiffness: 250 }}
-                              className="flex-1 flex items-center justify-between"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white rounded-lg p-1.5 shadow-sm border border-border/50">
-                                  <img
-                                    src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`}
-                                    alt={item.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                </div>
-                                <span className="font-bold text-sm text-foreground/90">{formatItemName(item.name)}</span>
-                              </div>
-                              <div className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-lg text-xs font-bold border border-primary/20">
-                                x{item.amount}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                      
-                      <div className="w-px bg-border/40 my-3" />
-                      
-                      <button 
-                        className="w-24 bg-secondary/30 flex items-center justify-center p-2 group/worth cursor-pointer relative overflow-hidden"
-                        onMouseEnter={() => setHoveringWorthIndex(idx)}
-                        onMouseLeave={() => setHoveringWorthIndex(null)}
-                        onClick={() => {
-                          if (parseFloat(item.worth) <= 0) return;
-                          if (sellingItemName === item.name) {
-                            if (sellAmount === 0) {
-                              setSellingItemName(null);
-                            } else {
-                              handleSell(item, sellAmount);
-                            }
-                          } else {
-                            if (item.amount === 1) {
-                              handleSell(item, 1);
-                            } else {
-                              setSellingItemName(item.name);
-                              setSellAmount(0);
-                            }
-                          }
-                        }}
-                      >
-                        <motion.div 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`w-full h-full rounded-lg flex items-center justify-center border shadow-sm transition-all duration-300 ${
-                            sellingItemName === item.name && sellAmount === 0
-                              ? "bg-white border-border text-primary"
-                              : parseFloat(item.worth) > 0 
-                                ? "bg-primary border-primary text-white" 
-                                : "bg-white border-border/50 text-muted-foreground"
-                          }`}
-                        >
-                          <span className="text-sm font-bold tracking-tight">
-                            {sellingItemName === item.name 
-                              ? (sellAmount === 0 ? "Cancel" : "Confirm") 
-                              : `$${item.worth}`}
-                          </span>
-                        </motion.div>
+                          <motion.div
+                            layout="position"
+                            key={item.name}
+                            initial={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8, x: -50 }}
+                            className="flex items-stretch bg-secondary/30 border border-border rounded-xl overflow-hidden group shadow-sm h-16"
+                          >
+                            <div className="flex-1 flex items-center justify-between p-3 relative overflow-hidden h-full">
+                              <AnimatePresence mode="popLayout">
+                                {sellingItemName === item.name ? (
+                                  <motion.div
+                                    key="sell-mode"
+                                    initial={{ y: -50, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 50, opacity: 0 }}
+                                    transition={{ type: "spring", damping: 15, stiffness: 250 }}
+                                    className="absolute inset-0 flex items-center px-4 gap-4 bg-primary/5"
+                                  >
+                                    {item.amount > 1 ? (
+                                      <div className="flex-1 relative h-6 flex items-center">
+                                        <div className="absolute inset-0 bg-primary/10 rounded-full h-1.5 my-auto" />
+                                        <motion.div
+                                          className="absolute inset-y-0 left-0 bg-primary rounded-full h-1.5 my-auto"
+                                          style={{ width: `${(sellAmount / item.amount) * 100}%` }}
+                                        />
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max={item.amount}
+                                          value={sellAmount}
+                                          onChange={(e) => setSellAmount(parseInt(e.target.value))}
+                                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        />
+                                        <motion.div
+                                          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none z-0"
+                                          animate={{ left: `${(sellAmount / item.amount) * 100}%` }}
+                                          style={{ marginLeft: '-8px' }}
+                                          transition={{ duration: 0 }}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="flex-1 flex items-center justify-center">
+                                        <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] animate-pulse">
+                                          Ready to sell
+                                        </span>
+                                      </div>
+                                    )}
+                                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest whitespace-nowrap">
+                                      Sell {sellAmount}
+                                    </span>
+                                  </motion.div>
+                                ) : (
+                                  <motion.div
+                                    key="normal-mode"
+                                    initial={{ y: 0, opacity: 1 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 50, opacity: 0 }}
+                                    transition={{ type: "spring", damping: 15, stiffness: 250 }}
+                                    className="flex-1 flex items-center justify-between"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-white rounded-lg p-1.5 shadow-sm border border-border/50">
+                                        <img
+                                          src={`https://api.dicebear.com/7.x/identicon/svg?seed=${item.name}`}
+                                          alt={item.name}
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                      <span className="font-bold text-sm text-foreground/90">{formatItemName(item.name)}</span>
+                                    </div>
+                                    <div className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-lg text-xs font-bold border border-primary/20">
+                                      x{item.amount}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
 
-                        <AnimatePresence>
-                          {hoveringWorthIndex === idx && sellingItemName !== item.name && parseFloat(item.worth) > 0 && (
-                            <motion.div
-                              initial={{ x: '100%' }}
-                              animate={{ x: 0 }}
-                              exit={{ x: '100%' }}
-                              transition={{ delay: 0.1, type: "spring", damping: 20, stiffness: 200 }}
-                              className="absolute inset-0 bg-white flex items-center justify-center z-10"
+                            <div className="w-px bg-border/40 my-3" />
+
+                            <button
+                              className="w-24 bg-secondary/30 flex items-center justify-center p-2 group/worth cursor-pointer relative overflow-hidden"
+                              onMouseEnter={() => setHoveringWorthIndex(idx)}
+                              onMouseLeave={() => setHoveringWorthIndex(null)}
+                              onClick={() => {
+                                if (parseFloat(item.worth) <= 0) return;
+                                if (sellingItemName === item.name) {
+                                  if (sellAmount === 0 && item.amount > 1) {
+                                    setSellingItemName(null);
+                                  } else {
+                                    handleSell(item, sellAmount);
+                                  }
+                                } else {
+                                  setSellingItemName(item.name);
+                                  if (item.amount === 1) {
+                                    setSellAmount(1);
+                                  } else {
+                                    setSellAmount(0);
+                                  }
+                                }
+                              }}
                             >
-                              <span className="text-primary font-bold text-xs uppercase tracking-widest">Sell</span>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </button>
-                    </motion.div>
-                    ))}
+                              <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className={`w-full h-full rounded-lg flex items-center justify-center border shadow-sm transition-all duration-300 ${sellingItemName === item.name && sellAmount === 0
+                                  ? "bg-white border-border text-primary"
+                                  : parseFloat(item.worth) > 0
+                                    ? "bg-primary border-primary text-white"
+                                    : "bg-white border-border/50 text-muted-foreground"
+                                  }`}
+                              >
+                                <span className="text-sm font-bold tracking-tight">
+                                  {sellingItemName === item.name
+                                    ? (sellAmount === 0 ? "Cancel" : "Confirm")
+                                    : `$${item.worth}`}
+                                </span>
+                              </motion.div>
+
+                              <AnimatePresence>
+                                {hoveringWorthIndex === idx && sellingItemName !== item.name && parseFloat(item.worth) > 0 && (
+                                  <motion.div
+                                    initial={{ x: '100%' }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: '100%' }}
+                                    transition={{ delay: 0.1, type: "spring", damping: 20, stiffness: 200 }}
+                                    className="absolute inset-0 bg-white flex items-center justify-center z-10"
+                                  >
+                                    <span className="text-primary font-bold text-xs uppercase tracking-widest">Sell</span>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </button>
+                          </motion.div>
+                        ))}
                     </div>
                   </>
                 )}
@@ -630,7 +637,7 @@ export function PlayerDashboardModal({
               <div className="w-[150px] h-[150px] animate-pulse bg-secondary rounded-lg" />
             )}
           </div>
-          <motion.button 
+          <motion.button
             onClick={copyToClipboard}
             whileHover="hover"
             initial="initial"
@@ -638,7 +645,7 @@ export function PlayerDashboardModal({
           >
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
             <span className="font-mono text-xs text-foreground/80 group-hover:text-foreground transition-colors whitespace-nowrap">{shortAddress}</span>
-            
+
             <motion.div
               variants={{
                 initial: { width: 0, opacity: 0, marginLeft: 0 },
@@ -668,13 +675,13 @@ export function PlayerDashboardModal({
                 )}
               </AnimatePresence>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               variants={{
                 initial: { opacity: 0 },
                 hover: { opacity: 1 }
               }}
-              className="absolute inset-0 bg-foreground/[0.05] pointer-events-none transition-opacity" 
+              className="absolute inset-0 bg-foreground/[0.05] pointer-events-none transition-opacity"
             />
           </motion.button>
         </div>

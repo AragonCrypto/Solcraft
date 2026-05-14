@@ -153,12 +153,12 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             style={{
-              fontFamily: "var(--font-inter),'Inter',sans-serif",
-              color: "rgba(255,255,255,0.75)",
-              fontSize: "clamp(0.55rem, 1vw, 0.72rem)",
-              letterSpacing: "0.38em",
-              textTransform: "uppercase",
-              marginBottom: "0.9rem",
+              fontFamily: "var(--font-space-grotesk),'Space Grotesk',sans-serif",
+              color: "#ffffff",
+              fontSize: "clamp(1.2rem, 2vw, 1.6rem)",
+              letterSpacing: "0.2em",
+              fontWeight: 700,
+              marginBottom: "1.2rem",
             }}
           >
             The Voxel-Based Solana Metaverse
@@ -284,7 +284,7 @@ export function HeroSection() {
       <motion.div
         style={{
           position: "absolute", zIndex: 50,
-          bottom: "32%", left: 0, right: 0,
+          bottom: "34%", left: 0, right: 0,
           display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1rem",
           padding: "0 1.5rem",
         }}
@@ -296,7 +296,7 @@ export function HeroSection() {
         <Link
           href="/play"
           style={{ fontFamily: "var(--font-space-grotesk),'Space Grotesk',sans-serif" }}
-          className="group relative overflow-hidden bg-white text-[#0f172a] px-8 py-3.5 rounded-sm font-medium text-xs tracking-[0.22em] uppercase transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto text-center"
+          className="group relative overflow-hidden bg-white text-[#0f172a] px-8 py-3.5 rounded-sm font-bold text-xs tracking-[0.22em] uppercase transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto text-center"
         >
           <span className="relative z-10">Enter The Frontier</span>
           <span className="absolute inset-0 bg-black/[0.06] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -304,17 +304,16 @@ export function HeroSection() {
         <Link
           href="#pitch"
           style={{ fontFamily: "var(--font-space-grotesk),'Space Grotesk',sans-serif" }}
-          className="bg-black/20 backdrop-blur-sm text-white border border-white/20 px-8 py-3.5 rounded-sm font-medium text-xs tracking-[0.22em] uppercase hover:bg-black/30 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-center"
+          className="bg-black/20 backdrop-blur-sm text-white border border-white/20 px-8 py-3.5 rounded-sm font-bold text-xs tracking-[0.22em] uppercase hover:bg-black/30 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto text-center"
         >
           Watch Pitch
         </Link>
       </motion.div>
 
-      {/* ── z-60: WHITE GRADIENT — fades bottom to page bg; overflow:hidden clips images ── */}
       <div
         style={{
           position: "absolute", zIndex: 101,
-          bottom: 0, left: 0, right: 0, height: "20px",
+          bottom: 0, left: 0, right: 0, height: "50px",
           background: "linear-gradient(to top, #FAFAFA 0%, rgba(250,250,250,1) 100%)",
           pointerEvents: "none",
         }}

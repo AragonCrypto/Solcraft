@@ -1,4 +1,0 @@
-# textdomain: bushes
-Young Tree 2 (bottom)=
-Bush Branches @1=
-Bush Leaves @1=

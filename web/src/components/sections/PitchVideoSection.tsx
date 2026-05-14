@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { Play } from "lucide-react";
 
 export function PitchVideoSection() {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,8 +37,8 @@ export function PitchVideoSection() {
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-              <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                <div className="w-0 h-0 border-t-[12px] border-t-transparent border-l-[22px] border-l-black border-b-[12px] border-b-transparent ml-2" />
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                <Play className="w-8 h-8 text-black fill-black ml-1" />
               </div>
             </div>
             
