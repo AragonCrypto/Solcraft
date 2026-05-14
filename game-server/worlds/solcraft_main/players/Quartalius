@@ -1,0 +1,65 @@
+breath = 10
+yaw = 245.2
+pitch = -21.1
+extended_attributes = null
+position = (1606.37,145,1460.7)
+hp = 9
+name = Quartalius
+version = 1
+PlayerArgsEnd
+List main 32
+Width 0
+Item default:wood 9
+Item flowers:tulip 5
+Item default:sword_wood 1 27150
+Item default:stick 7
+Item default:wood 6
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craft 9
+Width 3
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+Empty
+EndInventoryList
+List craftpreview 1
+Width 0
+Empty
+EndInventoryList
+List craftresult 1
+Width 0
+Empty
+EndInventoryList
+EndInventory
